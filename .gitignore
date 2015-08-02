@@ -1,3 +1,18 @@
+# vs solution files #
+#####################
+*.sln
+*.suo
+obj/
+
+# vs project files #
+####################
+sequencing_analysis.pyproj
+sequencing_analysis.py
+
+# log files #
+#############
+*.log
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
