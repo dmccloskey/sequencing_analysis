@@ -168,7 +168,7 @@ class genome_diff():
         geneReference_I = filename for the gene reference table
         biologicalmaterial_id_I = biologicalmatereial_id for the geneReference to use for the annotation (required to generate an ecocyc link)
         """
-        genomeannotation = genome_annotation(ref_genome_I,ref_I,geneReference_I);
+        genomeannotation = genome_annotations(ref_genome_I,ref_I,geneReference_I);
 
         # query mutation data:
         if mutationsFiltered_I:

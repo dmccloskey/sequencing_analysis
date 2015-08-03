@@ -36,11 +36,14 @@ class genome_annotations():
         """
         self.record = SeqIO.read(ref_genome_I,'genbank');
         
-    def _find_genesFromMutationPosition(self,mutation_position_I,record_I):
-        '''find genes at the position or closest to the position given the reference genome'''
-        #input:
-        # mutation_position_I = mutation position [int]
-        # record = genbank record [SeqRecord]
+    def _find_genesFromMutationPosition(self,mutation_position_I,record_I=None):
+        '''find genes at the position or closest to the position given the reference genome
+        input:
+        mutation_position_I = mutation position [int]
+        record = genbank record [SeqRecord]
+        '''
+        if not record_I:
+            record_I = self.record;
         snp_records = {};
         snp_records['gene'] = []
         snp_records['db_xref'] = []
@@ -155,12 +158,14 @@ class genome_annotations():
         '''Generate link to ecocyc using the ecogene accession number'''
         ecogene_httplink = 'http://ecocyc.org/ECOLI/NEW-IMAGE?type=GENE&object='+ecogene_I;
         return ecogene_httplink
-    def _find_genesInRegion(self,start_I,stop_I,record_I):
+    def _find_genesInRegion(self,start_I,stop_I,record_I=None):
         '''find genes in the start and stop region of the genome
         INPUT:
         mutation_position_I = mutation position [int]
         record_I = genbank record [SeqRecord]
         '''
+        if not record_I:
+            record_I = self.record;
         data_O = [];
         #extract all features within the start and stop region
         features = [f for f in record_I.features if start_I <= f.location.start.position and stop_I <= f.location.end.position]
