@@ -8,7 +8,8 @@ from matplotlib.pyplot import subplot, fill_between, xlabel, xlim, \
 class general_feature_format():
     #.gff
     # NOTE: multiple chromosomes not yet supported
-    def __init__(self,gff_file_I,plus_I,minus_I,plus_high_regions_I, minus_high_regions_I):
+    def __init__(self,gff_file_I = None,plus_I = None,minus_I = None,
+                 plus_high_regions_I = None, minus_high_regions_I = None):
         
         if gff_file_I:
             self.gff_file = gff_file_I;
@@ -147,12 +148,12 @@ class general_feature_format():
                 # case for the last point
                 # update all high regions (points_min satisfied)
                 elif consecutive_points >= points_min: # 2 satisfy the consecutive points
-                    plus_high_regions=record_highCoverageRegions(high_regions_tmp,plus_high_regions)
+                    plus_high_regions=self.record_highCoverageRegions(high_regions_tmp,plus_high_regions)
                     plus_high_region_summary.append({'start':start,'stop':index,'mean':high_regions_tmp[high_regions_tmp>0].mean()});    
             else:
                 # update all high regions and reset (points_min satisfied)
                 if consecutive_points >= points_min:
-                    plus_high_regions=record_highCoverageRegions(high_regions_tmp,plus_high_regions)
+                    plus_high_regions=self.record_highCoverageRegions(high_regions_tmp,plus_high_regions)
                     plus_high_region_summary.append({'start':start,'stop':index,'mean':high_regions_tmp[high_regions_tmp>0].mean()});
                     previous = index;
                     consecutive_points = 0;

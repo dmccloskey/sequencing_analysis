@@ -1,6 +1,6 @@
 from io_utilities.base_importData import base_importData
 from io_utilities.base_exportData import base_exportData
-from sequencing_utilities import gdparser
+from sequencing_utilities import gdparse
 from .genome_annotations import genome_annotations
 
 class genome_diff():

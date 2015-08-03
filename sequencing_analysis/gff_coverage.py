@@ -5,9 +5,11 @@ from calculate_utilities.base_calculate import base_calculate
 from .genome_annotations import genome_annotations
 
 class gff_coverage(general_feature_format):
-    def __init__(self,gff_file_I,plus_I,minus_I,plus_high_regions_I, minus_high_regions_I,
-                 coverage_I,coverageStats_I,
-                 amplifications_I,amplificationStats_I,amplificationAnnotations):
+    def __init__(self,gff_file_I = None,plus_I = None,minus_I = None,
+                 plus_high_regions_I = None, minus_high_regions_I = None,
+                 coverage_I = None,coverageStats_I = None,
+                 amplifications_I = None,amplificationStats_I = None,
+                 amplificationAnnotations_I = None):
         if gff_file_I:
             self.gff_file = gff_file_I;
         else:
@@ -46,6 +48,10 @@ class gff_coverage(general_feature_format):
             self.amplificationStats = amplificationStats_I;
         else:
             self.amplificationStats = [];
+        if amplificationAnnotations_I:
+            self.amplificationAnnotations = amplificationAnnotations_I;
+        else:
+            self.amplificationAnnotations = [];
 
     def find_amplifications_fromGff(self,gff_file,
                 strand_start, strand_stop,
@@ -249,18 +255,18 @@ class gff_coverage(general_feature_format):
         # get the data_dir
         self.set_gffFile(gff_file);
         # extract the strands
-        self.extract_strandsFromGff(strand_start, strand_stop, scale=scale_factor, downsample=downsample_factor)
+        self.extract_strandsFromGff(strand_start, strand_stop, scale=scale_factor, downsample=0)
         # find high coverage regions
         plus_high_region_indices,minus_high_region_indices = self.find_highCoverageRegions(coverage_min=reads_min,coverage_max=reads_max,points_min=indices_min,consecutive_tol=consecutive_tol);
         
         # record the means for later use
-        plus_mean,minus_mean = plus.mean(),minus.mean();
-        plus_min,minus_min = plus.min(),minus.min();
-        plus_max,minus_max = plus.max(),minus.max();
+        plus_mean,minus_mean = self.plus.mean(),self.minus.mean();
+        plus_min,minus_min = self.plus.min(),self.minus.min();
+        plus_max,minus_max = self.plus.max(),self.minus.max();
         # calculate stats on the high coverage regions
         # + strand
         for row_cnt,row in enumerate(plus_high_region_indices):
-            plus_region = plus_high_regions[(plus_high_regions.index>=row['start']) & (plus_high_regions.index<=row['stop'])]
+            plus_region = self.plus_high_regions[(self.plus_high_regions.index>=row['start']) & (self.plus_high_regions.index<=row['stop'])]
             # calculate using scipy
             data_ave_O, data_var_O, data_lb_O, data_ub_O = None, None, None, None;
             data_ave_O, data_var_O, data_lb_O, data_ub_O = calculate.calculate_ave_var(plus_region.values,confidence_I = 0.95);
@@ -376,7 +382,7 @@ class gff_coverage(general_feature_format):
                 });
         # - strand
         for row_cnt,row in enumerate(minus_high_region_indices):
-            minus_region = minus_high_regions[(minus_high_regions.index>=row['start']) & (minus_high_regions.index<=row['stop'])]
+            minus_region = self.minus_high_regions[(self.minus_high_regions.index>=row['start']) & (self.minus_high_regions.index<=row['stop'])]
             # calculate using scipy
             data_ave_O, data_var_O, data_lb_O, data_ub_O = None, None, None, None;
             data_ave_O, data_var_O, data_lb_O, data_ub_O = calculate.calculate_ave_var(minus_region.values,confidence_I = 0.95);
@@ -635,7 +641,7 @@ class gff_coverage(general_feature_format):
         experiment_id = experiment_id_I;
         sample_name = sample_name_I;
         # parse the gff file into pandas dataframes
-        self.extract_strandsFromGff(filename, strand_start, strand_stop, scale=scale_factor, downsample=downsample_factor)
+        self.extract_strandsFromGff(strand_start, strand_stop, scale=scale_factor, downsample=downsample_factor)
         # split into seperate data structures based on the destined table add
         coverage_data = [];
         if not self.plus.empty:
@@ -697,7 +703,7 @@ class gff_coverage(general_feature_format):
         experiment_id = experiment_id_I;
         sn = sample_name_I;
         # parse the gff file into pandas dataframes
-        self.extract_strandsFromGff(filename, strand_start, strand_stop, scale=scale_factor, downsample=downsample_factor)
+        self.extract_strandsFromGff(strand_start, strand_stop, scale=scale_factor, downsample=downsample_factor)
         # split into seperate data structures based on the destined table add
         coverageStats_data = [];
         # plus strand
