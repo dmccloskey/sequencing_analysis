@@ -59,7 +59,7 @@ class genome_diff():
         sample_name = string, name of the sample
 
         """
-        gd = gdparse.GDParser(file_handle=open(filename, 'rb'))
+        gd = gdparse.GDParser(file_handle=open(filename, 'r'))
         # extract out ids
         mutation_ids = [];
         mutation_ids = list(gd.data['mutation'].keys())
