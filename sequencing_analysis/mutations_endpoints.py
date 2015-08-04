@@ -70,25 +70,28 @@ class mutations_endpoints(mutations):
                 matched_mutations_tmp,\
                     analyzed_strain1_mutations_tmp,\
                     analyzed_strain2_mutations_tmp,\
-                    data_tmp = self._extract_commonMutations(matched_mutations,\
+                    data_tmp= self._extract_commonMutations(matched_mutations,\
                         analyzed_strain1_mutations,\
                         analyzed_strain2_mutations,\
-                        strain1_mutations,strain2_mutations);
+                        strain1_mutations,strain2_mutations,
+                        strain1,strain2_cnt,endpoint_name);
                 
                 analyzed_strain1_mutations.extend(analyzed_strain1_mutations_tmp)
                 analyzed_strain2_mutations.extend(analyzed_strain2_mutations_tmp)
                 analyzed_strain2_mutations_all.append(analyzed_strain2_mutations);
                 matched_mutations.update(matched_mutations_tmp);
                 data_O.extend(data_tmp);
-                strain2_cnt += 1;
+                strain2_cnt=strain2_cnt_tmp;
+                #update the strain2 counter
+                strain2_cnt+=1
             # extract unique mutations
             data_tmp = [];
-            data_tmp = self._extract_uniqueMutations(analyzed_strain1_mutations,analyzed_strain2_mutations_all);
+            data_tmp = self._extract_uniqueMutations(analyzed_strain1_mutations,analyzed_strain2_mutations_all,strain1_mutations,endpoint_name);
             data_O.extend(data_tmp);
         # record the data
         self.mutationsEndpoints = data_O;
 
-    def _extract_uniqueMutations(self):
+    def _extract_uniqueMutations(self,analyzed_strain1_mutations,analyzed_strain2_mutations_all,strain1_mutations,endpoint_name):
         '''Extract out unique mutations'''
         data_O = [];
         for analyzed_strain1_mutation in analyzed_strain1_mutations:
@@ -118,7 +121,10 @@ class mutations_endpoints(mutations):
     def _extract_commonMutations(self,matched_mutations,
                         analyzed_strain1_mutations,
                         analyzed_strain2_mutations,
-                        strain1_mutations,strain2_mutations):
+                        strain1_mutations,strain2_mutations,
+                        strain1,
+                        strain2_cnt,
+                        endpoint_name):
         '''extract out mutations that are in common between strains'''
         data_O = [];
         for strain1_mutation_cnt,strain1_mutation in enumerate(strain1_mutations):

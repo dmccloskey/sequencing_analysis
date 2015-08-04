@@ -60,11 +60,11 @@ class mutations_lineage(mutations):
                 intermediate_mutations = [];
                 intermediate_mutations = self._get_mutationsBySampleName(mutations,strain[intermediate]);
                 # extract mutation lineages
-                data_O.append(self._extract_mutationsLineage(end_mutations,intermediate_mutations));
+                data_O.append(self._extract_mutationsLineage(end_mutations,intermediate_mutations,intermediate,end_point));
         # record the data
         self.mutationsLineage = data_O;
 
-    def _extract_mutationsLineage(self,end_mutations,intermediate_mutations):
+    def _extract_mutationsLineage(self,lineage_name,end_mutations,intermediate_mutations,intermediate,end_point):
         """extract out mutation lineages based on the end-point mutation"""
         data_O = [];
         for end_cnt,end_mutation in enumerate(end_mutations):

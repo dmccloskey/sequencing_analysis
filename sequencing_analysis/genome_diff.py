@@ -224,7 +224,7 @@ class genome_diff():
             for pid in data_mutations['parent_ids']:
                 # get evidence for the pid
                 data_evidence_list = [];
-                data_evidence_list = self._get_evidenceByPid(self.evidence,pid_I)
+                data_evidence_list = self._get_evidenceByPid(self.evidence,pid)
                 # filter evidence based on user criteria
                 data_evidence_filtered = [];
                 data_evidence_filtered = self._filter_evidenceByPValueAndQualityAndFrequency(data_evidence_list,p_value_criteria=p_value_criteria,quality_criteria=quality_criteria,frequency_criteria=frequency_criteria);
@@ -234,7 +234,7 @@ class genome_diff():
         #record the data
         self.mutationsFiltered = data_O;
 
-    def _filter_mutationsByFrequencing(self,data_I,frequencing_criteria=0.1):
+    def _filter_mutationsByFrequency(self,data_I,frequency_criteria=0.1):
         """return data that is above the frequencing_criteria"""
         data_filtered = [];
         for d in data_I:
@@ -245,7 +245,7 @@ class genome_diff():
                 data_filtered.append(d);
         return data_filtered;
 
-    def _get_evidenceByPid(data_I,pid_I):
+    def _get_evidenceByPid(self,data_I,pid_I):
         """return data with matching pid"""
         data_evidence_list = [];
         data_evidence_dict = {};

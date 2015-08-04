@@ -28,13 +28,13 @@ class genome_annotations():
         '''import biological material gene references for annotations'''
         io = base_importData();
         io.read_csv(filename);
-        self.geneReference=io.data;
+        return io.data;
 
-    def set_record(ref_genome_I,ref_I='genbank'):
+    def set_record(self,ref_genome_I,ref_I='genbank'):
         """ref_genome_I = reference genome to use for the annotation
         ref_I = reference database, default, 'genbank'
         """
-        self.record = SeqIO.read(ref_genome_I,'genbank');
+        return SeqIO.read(ref_genome_I,ref_I);
         
     def _find_genesFromMutationPosition(self,mutation_position_I,record_I=None):
         '''find genes at the position or closest to the position given the reference genome
