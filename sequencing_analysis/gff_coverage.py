@@ -714,7 +714,7 @@ class gff_coverage(general_feature_format):
         min_O, max_O, median_O, iq_1_O, iq_3_O = None, None, None, None, None;
         min_O, max_O, median_O, iq_1_O, iq_3_O=calculate.calculate_interquartiles(self.plus.values);
         # record data
-        stats_O.append({
+        coverageStats_data.append({
             #'analysis_id':analysis_id,
             'experiment_id':experiment_id,
             'sample_name':sn,
@@ -722,8 +722,8 @@ class gff_coverage(general_feature_format):
             'genome_strand':'plus',
             'strand_start':strand_start,
             'strand_stop':strand_stop,
-            'reads_min':min_O,
-            'reads_max':max_O,
+            'reads_min':int(min_O),
+            'reads_max':int(max_O),
             'reads_lb':data_lb_O,
             'reads_ub':data_ub_O,
             'reads_iq1':iq_1_O,
@@ -742,7 +742,7 @@ class gff_coverage(general_feature_format):
         min_O, max_O, median_O, iq_1_O, iq_3_O = None, None, None, None, None;
         min_O, max_O, median_O, iq_1_O, iq_3_O=calculate.calculate_interquartiles(self.minus.values);
         # record data
-        stats_O.append({
+        coverageStats_data.append({
             #'analysis_id':analysis_id,
             'experiment_id':experiment_id,
             'sample_name':sn,
@@ -750,8 +750,8 @@ class gff_coverage(general_feature_format):
             'genome_strand':'minus',
             'strand_start':strand_start,
             'strand_stop':strand_stop,
-            'reads_min':min_O,
-            'reads_max':max_O,
+            'reads_min':int(min_O),
+            'reads_max':int(max_O),
             'reads_lb':data_lb_O,
             'reads_ub':data_ub_O,
             'reads_iq1':iq_1_O,
@@ -763,6 +763,6 @@ class gff_coverage(general_feature_format):
             'used_':True,
             'comment_':None});
         # record the data
-        self.coverageStats_data = coverageStats_data;
+        self.coverageStats = coverageStats_data;
 
 
