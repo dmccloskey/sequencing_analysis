@@ -2,12 +2,14 @@ from io_utilities.base_importData import base_importData
 from io_utilities.base_exportData import base_exportData
 from .genome_diff_mutations import mutations
 from calculate_utilities.base_calculate import base_calculate
+import numpy
 
 class mutations_heatmap(mutations):
-    def __init__(self,heatmap_I=[],dendrogram_col_I=[],dendrogram_row_I=[],mutations_I=[]):
+    def __init__(self,heatmap_I=[],dendrogram_col_I=[],dendrogram_row_I=[],mutations_I=[],sample_names_I=[]):
         '''
         INPUT:
         mutations_I
+        sample_names_I
         heatmap_I = heatmap data
         dendrogram_I = dendrogram data
         '''
@@ -15,6 +17,10 @@ class mutations_heatmap(mutations):
             self.mutations=mutations_I;
         else:
             self.mutations = [];
+        if sample_names_I:
+            self.sample_names=sample_names_I;
+        else:
+            self.sample_names = [];
         if heatmap_I:
             self.heatmap=heatmap_I;
         else:
@@ -37,14 +43,15 @@ class mutations_heatmap(mutations):
 
         # partition into variables:
         mutation_data = self.mutations;
+        sample_names = self.sample_names;
         mutation_data_O = [];
         mutation_ids_all = [];
-        for end_cnt,mutation in enumerate(mutations):
+        for end_cnt,mutation in enumerate(mutation_data):
             if mutation['mutation_position'] > max_position: #ignore positions great than 4000000
                 continue;
             # mutation id
-            mutation_genes_str = '';
-            mutation_genes_str = self._make_mutationID(mutation['mutation_genes'],mutation['mutation_type'],mutation['mutation_position'])
+            mutation_id = '';
+            mutation_id = self._make_mutationID(mutation['mutation_genes'],mutation['mutation_type'],mutation['mutation_position'])
             tmp = {};
             tmp.update(mutation);
             tmp.update({'mutation_id':mutation_id});
@@ -66,7 +73,7 @@ class mutations_heatmap(mutations):
         heatmap_O = [];
         dendrogram_col_O = {};
         dendrogram_row_O = {};
-        heatmap_O,dendrogram_col_O,dendrogram_row_O = self.calculate.heatmap(data_O,samples,mutation_ids,
+        heatmap_O,dendrogram_col_O,dendrogram_row_O = calculate.heatmap(data_O,samples,mutation_ids,
                 row_pdist_metric_I=row_pdist_metric_I,row_linkage_method_I=row_linkage_method_I,
                 col_pdist_metric_I=col_pdist_metric_I,col_linkage_method_I=col_linkage_method_I);
         # record the data
@@ -81,7 +88,7 @@ class mutations_heatmap(mutations):
             mutation_genes_str = mutation_genes_str + gene + '-/-'
         mutation_genes_str = mutation_genes_str[:-3];
         mutation_id = mutation_type + '_' + mutation_genes_str + '_' + str(mutation_position);
-        return mutation_genes_str;
+        return mutation_id;
 
     def clear_data(self):
         del self.mutations[:];
