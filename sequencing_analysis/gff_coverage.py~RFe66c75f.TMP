@@ -3,7 +3,6 @@ from io_utilities.base_exportData import base_exportData
 from .general_feature_format import general_feature_format
 from calculate_utilities.base_calculate import base_calculate
 from .genome_annotations import genome_annotations
-import json
 
 class gff_coverage(general_feature_format):
     def __init__(self,gff_file_I = None,plus_I = None,minus_I = None,
@@ -511,24 +510,47 @@ class gff_coverage(general_feature_format):
         genomeannotation = genome_annotations(ref_genome_I,ref_I,geneReference_I);
         
         data_O = [];
-        # get amplification regions
-        amplificationStats = self.amplificationStats;
+        # get chromosomes
+        chromosomes = [];
+        chromosomes = self._get_chromosomes(self.amplifications);
+        for chromosome in chromosomes:
+            # get strands
+            strands = []
+            strands = self._get_strandsByChromosome(self.amplifications,chromosome);
+            # remove visualization regions
+            strands = [s for s in strands if not 'mean' in s];
+            for strand in strands:
+                # get the start and stop of the indices
+                genomic_starts,genomic_stops = [],[]
+                genomic_starts,genomic_stops = self._get_startAndStopsByChromosomeAndStrand(self.amplifications,chromosome,strand);
+                # get the start and stop regions
+                starts,stops = [],[]
+                starts,stops = self._get_amplificationRegionsByChromosomeAndStrand(self.amplifications,chromosome,strand);
+                data_O.append(self._annotate_amplificationRegions(genomeannotation,biologicalmaterial_id_I,start,stop));
+
+    def _annotate_amplificationRegions(self,genomeannotation_I,biologicalmaterial_id_I,start_I,stop_I):
+        """annotate amplification regions
+        INPUT:
+        genomeannotation_I = genome_annotation object
+        biologicalmaterial_id_I = biologicalmatereial_id for the geneReference to use for the annotation (required to generate an ecocyc link)
+        """
+        data_O;
         # annotate each region
-        for row in amplificationStats:
+        for start_cnt,start in enumerate(starts):
             # annotate each mutation based on the position
             annotations = [];
-            annotations = genomeannotation._find_genesInRegion(row['amplification_start'],row['amplification_start'])
+            annotations = genomeannotation_I._find_genesInRegion(start,stops[start_cnt],record)
             for annotation in annotations:
                 # record the data
                 tmp = {
-                    'experiment_id':row['experiment_id'],
-                    'sample_name':row['sample_name'],
-                    'genome_chromosome':row['genome_chromosome'],
-                    'genome_strand':row['genome_strand'],
-                    'strand_start':row['strand_start'],
-                    'strand_stop':row['strand_stop'],
-                    'amplification_start':row['amplification_start'],
-                    'amplification_stop':row['amplification_stop'],
+                    'experiment_id':experiment_id,
+                    'sample_name':sn,
+                    'genome_chromosome':chromosome,
+                    'genome_strand':strand,
+                    'strand_start':genomic_starts[0],
+                    'strand_stop':genomic_stops[0],
+                    'amplification_start':start,
+                    'amplification_stop':stops[start_cnt],
                     'used_':True,
                     'comment_':None};
                 tmp['feature_genes'] = annotation['gene']
@@ -542,14 +564,14 @@ class gff_coverage(general_feature_format):
                 for bnumber in annotation['locus_tag']:
                     if bnumber:
                         ecogenes = [];
-                        ecogenes = genomeannotation._get_ecogenesByBiologicalmaterialIDAndOrderedLocusName(biologicalmaterial_id_I,bnumber);
+                        ecogenes = genomeannotation_I._get_ecogenesByBiologicalmaterialIDAndOrderedLocusName('MG1655',bnumber);
                         if ecogenes:
                             ecogene = ecogenes[0];
-                            ecogene_link = genomeannotation._generate_httplink2gene_ecogene(ecogene['ecogene_accession_number']);
+                            ecogene_link = genomeannotation_I._generate_httplink2gene_ecogene(ecogene['ecogene_accession_number']);
                             tmp['feature_links'].append(ecogene_link)
                         else: print('no ecogene_accession_number found for ordered_locus_location ' + bnumber);
                 data_O.append(tmp);
-        self.amplificationAnnotations = data_O;
+        return data_O;
 
     def _get_chromosomes(self,data_I,experiment_id_I=None,sample_name_I=None):
         """return all chromosomes"""
@@ -595,19 +617,6 @@ class gff_coverage(general_feature_format):
                     genomic_starts.append(d['amplification_start']);
                     genomic_stops.append(d['amplification_stop']);
             elif d['genome_chromosome'] == chromosome_I and d['genome_strand'] == strand_I:
-                genomic_starts.append(d['amplification_start']);
-                genomic_stops.append(d['amplification_stop']);
-        return genomic_starts,genomic_stops;
-
-    def _get_amplificationRegions(self,data_I,experiment_id_I=None,sample_name_I=None):
-        """return strand start and stop positions"""
-        genomic_starts,genomic_stops = [],[]
-        for d in data_I:
-            if experiment_id_I and sample_name_I:
-                if d['experiment_id'] == experiment_id_I and d['sample_name'] == sample_name_I:
-                    genomic_starts.append(d['amplification_start']);
-                    genomic_stops.append(d['amplification_stop']);
-            else:
                 genomic_starts.append(d['amplification_start']);
                 genomic_stops.append(d['amplification_stop']);
         return genomic_starts,genomic_stops;
@@ -763,9 +772,9 @@ class gff_coverage(general_feature_format):
         data1_O = [];
         data2_O = [];
         data3_O = [];
-        data1_O = self._make_sampleNameStrand(self.amplifications);
-        data2_O = self._make_sampleNameStrand(self.amplificationStats);
-        data3_O = self._make_sampleNameStrand(self.amplificationAnnotations);
+        data1_O = self.amplifications;
+        data2_O = self.amplificationStats;
+        data3_O = self.amplificationAnnotations;
         # dump chart parameters to a js files
         data1_keys = ['experiment_id',
                     'sample_name',
@@ -892,7 +901,7 @@ class gff_coverage(general_feature_format):
         tile2datamap_str = 'var ' + 'tile2datamap' + ' = ' + json.dumps(tile2datamap_O) + ';';
         filtermenu_str = 'var ' + 'filtermenu' + ' = ' + json.dumps(filtermenuobject_O) + ';';
         if data_dir_I=='tmp':
-            filename_str = 'ddt_data.js'
+            filename_str = settings.visualization_data + 'ddt_data.js'
         elif data_dir_I=='data_json':
             data_json_O = data_str + '\n' + parameters_str + '\n' + tile2datamap_str + '\n' + filtermenu_str;
             return data_json_O;
@@ -908,8 +917,8 @@ class gff_coverage(general_feature_format):
         #get the data for the analysis
         data1_O = [];
         data2_O = [];
-        data1_O = self._make_sampleNameStrand(self.coverage);
-        data2_O = self._make_sampleNameStrand(self.coverageStats);
+        data1_O = self.coverage;
+        data2_O = self.coverageStats;
         # dump chart parameters to a js files
         data1_keys = ['experiment_id',
                     'sample_name',
@@ -988,7 +997,9 @@ class gff_coverage(general_feature_format):
         parameters_str = 'var ' + 'parameters' + ' = ' + json.dumps(parametersobject_O) + ';';
         tile2datamap_str = 'var ' + 'tile2datamap' + ' = ' + json.dumps(tile2datamap_O) + ';';
         if data_dir_I=='tmp':
-            filename_str = 'ddt_data.js'
+            filename_str = settings.visualization_data + '/tmp/ddt_data.js'
+        elif data_dir_I=='project':
+            filename_str = settings.visualization_data + '/project/' + analysis_id_I + '_data_stage01_resequencing_lineage' + '.js'
         elif data_dir_I=='data_json':
             data_json_O = data_str + '\n' + parameters_str + '\n' + tile2datamap_str;
             return data_json_O;
@@ -996,11 +1007,5 @@ class gff_coverage(general_feature_format):
             file.write(data_str);
             file.write(parameters_str);
             file.write(tile2datamap_str);
-
-    def _make_sampleNameStrand(self,coverage_I):
-        """generate a unique sample/strand name for visualization"""
-        for d in coverage_I:
-            d['sample_name_strand']="_".join([d['sample_name'],d['genome_strand']]);
-        return coverage_I;
 
 
