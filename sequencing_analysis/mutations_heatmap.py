@@ -52,7 +52,7 @@ class mutations_heatmap(mutations):
                 continue;
             # mutation id
             mutation_id = '';
-            mutation_id = self._make_mutationID(mutation['mutation_genes'],mutation['mutation_type'],mutation['mutation_position'])
+            mutation_id = self._make_mutationID(mutation['mutation_genes'],mutation['mutation_type'],int(mutation['mutation_position']))
             tmp = {};
             tmp.update(mutation);
             tmp.update({'mutation_id':mutation_id});

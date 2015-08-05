@@ -51,6 +51,8 @@ class genome_diff():
         for mutationData in mutationData_I:
             if type(mutationData['mutation_data'])==type('string'):
                 mutationData['mutation_data'] = eval(mutationData['mutation_data']);
+            if type(mutationData['mutation_genes'])==type('string'):
+                mutationData['mutation_genes'] = eval(mutationData['mutation_genes']);
         return mutationData;
 
     def import_gd(self, filename, experiment_id='', sample_name=''):

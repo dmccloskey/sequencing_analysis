@@ -13,6 +13,10 @@ main.py
 #############
 *.log
 
+# private data #
+#############
+data_private/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
