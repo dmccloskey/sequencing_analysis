@@ -7,7 +7,7 @@ obj/
 # vs project files #
 ####################
 sequencing_analysis.pyproj
-sequencing_analysis.py
+main.py
 
 # log files #
 #############

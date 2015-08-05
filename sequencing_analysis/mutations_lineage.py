@@ -30,18 +30,21 @@ class mutations_lineage(mutations):
         else:
             self.mutationsLineage=[];
 
-    def analyze_lineage_population():
+    def analyze_lineage_population(self,lineage_name_I=None,lineage_sample_names_I={}):
         '''Analyze a lineage to identify the following:
         1. conserved mutations
         2. changes in frequency of mutations
         3. hitch-hiker mutations
         Input:
-           experiment_id = string,
            lineage_name = string,
            lineage_sample_names = {0:sample_name,1:sample_name,2:sample_name,...,n:sample_name}
                                      n is the end-point strain
         Output:
         '''
+        if lineage_name_I:
+            self.lineage_name = lineage_name_I;
+        if lineage_sample_names_I:
+            self.lineage_sample_names = lineage_sample_names_I;
         data_O = [];
         mutations = self.mutations;
         strain_lineage = {self.lineage_name:self.lineage_sample_names};
@@ -60,7 +63,7 @@ class mutations_lineage(mutations):
                 intermediate_mutations = [];
                 intermediate_mutations = self._get_mutationsBySampleName(mutations,strain[intermediate]);
                 # extract mutation lineages
-                data_O.append(self._extract_mutationsLineage(end_mutations,intermediate_mutations,intermediate,end_point));
+                data_O.extend(self._extract_mutationsLineage(lineage_name,end_mutations,intermediate_mutations,intermediate,end_point));
         # record the data
         self.mutationsLineage = data_O;
 
@@ -150,7 +153,7 @@ class mutations_lineage(mutations):
         return data_O;
     
     def export_mutationsLineage(self,filename_O):
-        """export mutations"""
+        """export mutationsLineage"""
         io = base_exportData(self.mutationsLineage);
         io.write_dict2csv(filename_O);
 
@@ -159,3 +162,9 @@ class mutations_lineage(mutations):
         self.lineage_name = None;
         self.lineage_sample_names = {};
         del self.mutationsLineage[:];
+
+    def import_mutationsLineage(self,filename_I):
+        """import mutationsLineage"""
+        io = base_importData();
+        io.read_csv(filename_I);
+        self.mutationsLineage = io.data;

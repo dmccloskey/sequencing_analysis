@@ -4,7 +4,7 @@ from .genome_diff import genome_diff
 from .genome_diff_mutations import mutations
 
 class mutations_endpoints(mutations):
-    def __init__(self,endpoint_name_I = None, endpoint_sample_names_I={}, mutations_I = [],mutationsEndpoints_I=[]):
+    def __init__(self,endpoint_name_I = None, endpoint_sample_names_I=[], mutations_I = [],mutationsEndpoints_I=[]):
         '''
         INPUT:
         endpoint_name_I = name of the endpoint grouping
@@ -21,23 +21,25 @@ class mutations_endpoints(mutations):
         if endpoint_sample_names_I:
             self.endpoint_sample_names=endpoint_sample_names_I;
         else:
-            self.endpoint_sample_names = {};
+            self.endpoint_sample_names = [];
         if mutationsEndpoints_I:
             self.mutationsEndpoints=mutationsEndpoints_I;
         else:
             self.mutationsEndpoints=[];
     
-    def execute_analyzeEndpoints_population(self,experiment_id,end_points):
+    def analyze_endpoints_population(self,endpoint_name_I=None,endpoint_sample_names_I=[]):
         '''Analyze endpoints to identify the following:
         1. conserved mutations among replicates
         2. unique mutations among replicates
         Input:
-           experiment_id = experiment id
            endpoint_name = string 
            endpoint_sample_names = [sample_name_1,sample_name_2,sample_name_3,...]
         #Output:
         '''
-
+        if endpoint_name_I:
+            self.endpoint_name = endpoint_name_I;
+        if endpoint_sample_names_I:
+            self.endpoint_sample_names = endpoint_sample_names_I;
         print('Executing analyzeEndpoints_population...')
         endpoint_name = self.endpoint_name;
         strains = self.endpoint_sample_names;
@@ -81,7 +83,6 @@ class mutations_endpoints(mutations):
                 analyzed_strain2_mutations_all.append(analyzed_strain2_mutations);
                 matched_mutations.update(matched_mutations_tmp);
                 data_O.extend(data_tmp);
-                strain2_cnt=strain2_cnt_tmp;
                 #update the strain2 counter
                 strain2_cnt+=1
             # extract unique mutations
@@ -209,5 +210,16 @@ class mutations_endpoints(mutations):
     def clear_data(self):
         del self.mutations[:];
         self.endpoint_name = None;
-        self.endpoint_sample_names = [];
+        del self.endpoint_sample_names[:];
         del self.mutationsEndpoints[:];
+    
+    def export_mutationsEndpoints(self,filename_O):
+        """export mutationsEndpoints"""
+        io = base_exportData(self.mutationsEndpoints);
+        io.write_dict2csv(filename_O);
+
+    def import_mutationsEndpoints(self,filename_I):
+        """import mutationsEndpoints"""
+        io = base_importData();
+        io.read_csv(filename_I);
+        self.mutationsEndpoints = io.data;

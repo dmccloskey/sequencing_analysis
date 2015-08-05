@@ -2,12 +2,19 @@ from io_utilities.base_importData import base_importData
 from io_utilities.base_exportData import base_exportData
 from .genome_diff import genome_diff
 
-class mutations():
-    def __init__(self,mutations_I = []):
-        if mutations_I:
-            self.mutations=mutations_I;
-        else:
-            self.mutations = [];    
+class mutations(genome_diff):
+    #def __init__(self,mutations_I = []):
+    #    if mutations_I:
+    #        self.mutations=mutations_I;
+    #    else:
+    #        self.mutations = [];
+    
+    #def format_mutationData(self,mutationData_I):
+    #    """converts '{}' to {}"""
+    #    for mutationData in mutationData_I:
+    #        if type(mutationData['mutation_data'])==type('string'):
+    #            mutationData['mutation_data'] = eval(mutationData['mutation_data']);
+    #    return mutationData;
 
     def import_mutations(self,filenames_I=[]):
         """import mutations for multiple experiments/samples"""
@@ -16,6 +23,7 @@ class mutations():
             io.read_csv(filename);
             self.mutations.extend(io.data);
             io.clear_data();
+        mutationData = self.format_mutationData(self.mutations);
 
     def _get_mutationsBySampleName(self,data_I,sample_name_I):
         """return mutations that match the sample_name"""

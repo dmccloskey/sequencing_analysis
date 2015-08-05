@@ -1,3 +1,5 @@
+from io_utilities.base_importData import base_importData
+from io_utilities.base_exportData import base_exportData
 from Bio import SeqIO
 from Bio import Entrez
 
@@ -294,10 +296,10 @@ class genome_annotations():
                 data_O.append(snp_records);
 
         return data_O;
-    def _get_ecogenesByBiologicalmaterialIDAndOrderedLocusName(biologicalmaterial_id_I,ordered_locus_name_I):
+    def _get_ecogenesByBiologicalmaterialIDAndOrderedLocusName(self,biologicalmaterial_id_I,ordered_locus_name_I):
         """return the ecogenes that match the biologicalmaterial_id and ordered_locus_name"""
         ecogenes = [];
-        for d in self.geneReferences:
+        for d in self.geneReference:
             if d['biologicalmaterial_id'] ==  biologicalmaterial_id_I and d['ordered_locus_name'] == ordered_locus_name_I:
                 ecogenes.append(d);
         return ecogenes;

@@ -45,6 +45,13 @@ class genome_diff():
             self.geneReference = geneReference_I;
         else:
             self.geneReference = [];
+    
+    def format_mutationData(self,mutationData_I):
+        """converts '{}' to {}"""
+        for mutationData in mutationData_I:
+            if type(mutationData['mutation_data'])==type('string'):
+                mutationData['mutation_data'] = eval(mutationData['mutation_data']);
+        return mutationData;
 
     def import_gd(self, filename, experiment_id='', sample_name=''):
         """import and parse .gd file
@@ -158,11 +165,11 @@ class genome_diff():
         io = base_exportData(self.mutationsFiltered);
         io.write_dict2csv(filename_O);
 
-    def annotate_mutations(self,mutationsFiltered_I=True,ref_genome_I='U00096.2.gb',
+    def annotate_mutations(self,table_I='mutationsFiltered',ref_genome_I='U00096.2.gb',
                            ref_I = 'genbank',geneReference_I=None,biologicalmaterial_id_I='MG1655'):
         """annotate filtered mutation from reference
         INPUT:
-        mutationsFiltered_I = boolean, annotates the filtered mutations if true, annotates all mutations if false
+        table_I = string name of the table to filter
         ref_genome_I = reference genome to use for the annotation
         ref_I = reference database
         geneReference_I = filename for the gene reference table
@@ -171,15 +178,20 @@ class genome_diff():
         genomeannotation = genome_annotations(ref_genome_I,ref_I,geneReference_I);
 
         # query mutation data:
-        if mutationsFiltered_I:
+        if table_I == 'mutationsFiltered':
             mutations = self.mutationsFiltered;
+        elif table_I == 'mutationsLineage':
+            mutations = self.mutationsLineage;
+        elif table_I == 'mutationsEndpoints':
+            mutations = self.mutationsEndpoints;
         else:
             mutations = self.mutations;
         mutation_data_O = [];
         for end_cnt,mutation in enumerate(mutations):
+            data_tmp = {};
             # annotate each mutation based on the position
             annotation = {};
-            annotation = genomeannotation._find_genesFromMutationPosition(mutation['mutation_data']['position'],record);
+            annotation = genomeannotation._find_genesFromMutationPosition(mutation['mutation_data']['position']);
             data_tmp['mutation_genes'] = annotation['gene']
             data_tmp['mutation_locations'] = annotation['location']
             data_tmp['mutation_annotations'] = annotation['product']
@@ -189,7 +201,7 @@ class genome_diff():
                 for bnumber in annotation['locus_tag']:
                     if bnumber:
                         ecogenes = [];
-                        ecogenes = genomeannotation._get_ecogenesByBiologicalmaterialIDAndOrderedLocusName('MG1655',bnumber);
+                        ecogenes = genomeannotation._get_ecogenesByBiologicalmaterialIDAndOrderedLocusName(biologicalmaterial_id_I,bnumber);
                         if ecogenes:
                             ecogene = ecogenes[0];
                             ecogene_link = genomeannotation._generate_httplink2gene_ecogene(ecogene['ecogene_accession_number']);
