@@ -72,3 +72,57 @@ class gene_exp_diff():
             if 'q_value' in fpkmTracking and type(fpkmTracking['q_value'])==type('string'):
                 fpkmTracking['q_value'] = eval(fpkmTracking['q_value']);
         return fpkmTracking_I;
+        
+    def export_geneExpDiff_js(self,data_dir_I='tmp'):
+        '''Export data for a volcano plot'''
+        
+        #get the data for the analysis
+        data_O = [];
+        data_O = self.geneExpDiff
+        # make the data parameters
+        data1_keys = ['experiment_id_1','experiment_id_2','sample_name_abbreviation_1','sample_name_abbreviation_2','gene','log2(fold_change)','p_value'
+                    ];
+        data1_nestkeys = ['experiment_id_1'];
+        data1_keymap = {'ydata':'p_value',
+                        'xdata':'log2(fold_change)',
+                        'serieslabel':'',
+                        'featureslabel':'gene'};
+        # make the data object
+        dataobject_O = [{"data":data_O,"datakeys":data1_keys,"datanestkeys":data1_nestkeys}];
+        # make the tile parameter objects
+        formtileparameters_O = {'tileheader':'Filter menu','tiletype':'html','tileid':"filtermenu1",'rowid':"row1",'colid':"col1",
+            'tileclass':"panel panel-default",'rowclass':"row",'colclass':"col-sm-4"};
+        formparameters_O = {'htmlid':'filtermenuform1',"htmltype":'form_01',"formsubmitbuttonidtext":{'id':'submit1','text':'submit'},"formresetbuttonidtext":{'id':'reset1','text':'reset'},"formupdatebuttonidtext":{'id':'update1','text':'update'}};
+        formtileparameters_O.update(formparameters_O);
+        svgparameters_O = {"svgtype":'volcanoplot2d_01',"svgkeymap":[data1_keymap],
+                            'svgid':'svg1',
+                            "svgmargin":{ 'top': 50, 'right': 50, 'bottom': 50, 'left': 50 },
+                            "svgwidth":500,"svgheight":350,
+                            "svgx1axislabel":'Fold Change [log2(FC)]',"svgy1axislabel":'Probability [-log10(P)]',
+    						'svgformtileid':'filtermenu1','svgresetbuttonid':'reset1','svgsubmitbuttonid':'submit1'};
+        svgtileparameters_O = {'tileheader':'Volcano plot','tiletype':'svg','tileid':"tile2",'rowid':"row1",'colid':"col2",
+            'tileclass':"panel panel-default",'rowclass':"row",'colclass':"col-sm-8"};
+        svgtileparameters_O.update(svgparameters_O);
+        tableparameters_O = {"tabletype":'responsivetable_01',
+                    'tableid':'table1',
+                    "tablefilters":None,
+                    "tableclass":"table  table-condensed table-hover",
+    			    'tableformtileid':'filtermenu1','tableresetbuttonid':'reset1','tablesubmitbuttonid':'submit1'};
+        tabletileparameters_O = {'tileheader':'pairWiseTest','tiletype':'table','tileid':"tile3",'rowid':"row2",'colid':"col1",
+            'tileclass':"panel panel-default",'rowclass':"row",'colclass':"col-sm-12"};
+        tabletileparameters_O.update(tableparameters_O);
+        parametersobject_O = [formtileparameters_O,svgtileparameters_O,tabletileparameters_O];
+        tile2datamap_O = {"filtermenu1":[0],"tile2":[0],"tile3":[0]};
+        # dump the data to a json file
+        data_str = 'var ' + 'data' + ' = ' + json.dumps(dataobject_O) + ';';
+        parameters_str = 'var ' + 'parameters' + ' = ' + json.dumps(parametersobject_O) + ';';
+        tile2datamap_str = 'var ' + 'tile2datamap' + ' = ' + json.dumps(tile2datamap_O) + ';';
+        if data_dir_I=='tmp':
+            filename_str = 'ddt_data.js'
+        elif data_dir_I=='data_json':
+            data_json_O = data_str + '\n' + parameters_str + '\n' + tile2datamap_str;
+            return data_json_O;
+        with open(filename_str,'w') as file:
+            file.write(data_str);
+            file.write(parameters_str);
+            file.write(tile2datamap_str);
