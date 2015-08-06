@@ -24,3 +24,5 @@ Biopython
 [calculate_utilities](https://github.com/dmccloskey/calculate_utilities.git)
 
 [sequencing_utilities](https://github.com/dmccloskey/sequencing_utilities.git)
+
+[ddt](https://github.com/dmccloskey/ddt.git) for visualization

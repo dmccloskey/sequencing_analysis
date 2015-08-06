@@ -49,11 +49,19 @@ class genome_diff():
     def format_mutationData(self,mutationData_I):
         """converts '{}' to {}"""
         for mutationData in mutationData_I:
-            if type(mutationData['mutation_data'])==type('string'):
+            if 'mutation_data' in mutationData and type(mutationData['mutation_data'])==type('string'):
                 mutationData['mutation_data'] = eval(mutationData['mutation_data']);
-            if type(mutationData['mutation_genes'])==type('string'):
+            if 'mutation_genes' in mutationData and type(mutationData['mutation_genes'])==type('string'):
                 mutationData['mutation_genes'] = eval(mutationData['mutation_genes']);
-        return mutationData;
+            if 'mutation_locations' in mutationData and type(mutationData['mutation_locations'])==type('string'):
+                mutationData['mutation_locations'] = eval(mutationData['mutation_locations']);
+            if 'mutation_annotations' in mutationData and type(mutationData['mutation_annotations'])==type('string'):
+                mutationData['mutation_annotations'] = eval(mutationData['mutation_annotations']);
+            if 'mutation_frequency' in mutationData and type(mutationData['mutation_frequency'])==type('string'):
+                mutationData['mutation_frequency'] = eval(mutationData['mutation_frequency']);
+            if 'mutation_position' in mutationData and type(mutationData['mutation_position'])==type('string'):
+                mutationData['mutation_position'] = eval(mutationData['mutation_position']);
+        return mutationData_I;
 
     def import_gd(self, filename, experiment_id='', sample_name=''):
         """import and parse .gd file
@@ -120,27 +128,27 @@ class genome_diff():
         """import mutations"""
         io = base_importData();
         io.read_csv(filename_I);
-        self.mutations = io.data;
+        self.mutations = self.format_mutationData(io.data);
     def import_validation(self,filename_I):
         """import validation"""
         io = base_importData();
         io.read_csv(filename_I);
-        self.validation = io.data;
+        self.validation = self.format_mutationData(io.data);
     def import_evidence(self,filename_I):
         """import evidence"""
         io = base_importData();
         io.read_csv(filename_I);
-        self.evidence = io.data;
+        self.evidence = self.format_mutationData(io.data);
     def import_mutationsAnnotated(self,filename_I):
         """import mutationsAnnotated"""
         io = base_importData();
         io.read_csv(filename_I);
-        self.mutationsAnnotated = io.data;
+        self.mutationsAnnotated = self.format_mutationData(io.data);
     def import_mutationsFiltered(self,filename_I):
         """import mutationsFiltered"""
         io = base_importData();
         io.read_csv(filename_I);
-        self.mutationsFiltered = io.data;
+        self.mutationsFiltered = self.format_mutationData(io.data);
 
     def export_metadata(self,filename_O):
         """export metadata"""
@@ -317,3 +325,12 @@ class genome_diff():
         del self.mutations[:];
         del self.mutationsFiltered[:];
         del self.mutationsAnnotated[:];
+
+    def _make_mutationID(self,mutation_genes,mutation_type,mutation_position):
+        '''return a unique mutation id string'''
+        mutation_genes_str = '';
+        for gene in mutation_genes:
+            mutation_genes_str = mutation_genes_str + gene + '-/-'
+        mutation_genes_str = mutation_genes_str[:-3];
+        mutation_id = mutation_type + '_' + mutation_genes_str + '_' + str(mutation_position);
+        return mutation_id;

@@ -222,4 +222,4 @@ class mutations_endpoints(mutations):
         """import mutationsEndpoints"""
         io = base_importData();
         io.read_csv(filename_I);
-        self.mutationsEndpoints = io.data;
+        self.mutationsEndpoints = self.format_mutationData(io.data);

@@ -168,14 +168,14 @@ class mutations_lineage(mutations):
         """import mutationsLineage"""
         io = base_importData();
         io.read_csv(filename_I);
-        self.mutationsLineage = io.data;
+        self.mutationsLineage = self.format_mutationData(io.data);
 
     def export_lineage_js(self,mutation_id_exclusion_list=[],data_dir_I="tmp"):
         '''export lineage to js file
         Default: will export the mutationsAnnotated table if mutationsLineage have been annotated'''
 
-        intermediates = self.lineage_sample_names.keys();
-        sample_names = self.lineage_sample_names.values();
+        intermediates = list(self.lineage_sample_names.keys());
+        sample_names = list(self.lineage_sample_names.values());
 
         # get the lineage information
         lineage_data = [];
@@ -183,6 +183,10 @@ class mutations_lineage(mutations):
             lineage_data = self.mutationsAnnotated;
         else:
             lineage_data = self.mutationsLineage;
+        # generate a unique mutation_id if it does not exist
+        if not 'mutation_id' in lineage_data[0]:
+            for d in lineage_data:
+                d['mutation_id'] = self._make_mutationID(d['mutation_genes'],d['mutation_type'],d['mutation_position']);
         mutation_ids = [x['mutation_id'] for x in lineage_data];
         mutation_ids_screened = [x for x in mutation_ids if x not in mutation_id_exclusion_list];
         mutation_ids_unique = list(set(mutation_ids_screened));
@@ -192,14 +196,6 @@ class mutations_lineage(mutations):
             for mutation in lineage_data:
                 if mutation_id == mutation['mutation_id']:
                     tmp = {};
-                    #tmp['mutation_id']=mutation['mutation_id']
-                    #tmp['mutation_frequency']=mutation['mutation_frequency'];
-                    #tmp['mutation_genes']=mutation['mutation_genes'];
-                    #tmp['mutation_position']=mutation['mutation_position'];
-                    #tmp['mutation_annotations']=mutation['mutation_annotations'];
-                    #tmp['mutation_locations']=mutation['mutation_locations'];
-                    #tmp['mutation_links']=mutation['mutation_links'];
-                    #tmp['mutation_type']=mutation['mutation_type'];
                     tmp['mutation_id']=mutation['mutation_id'];
                     tmp['mutation_frequency']=mutation['mutation_frequency'];
                     if mutation['mutation_genes']:
@@ -239,11 +235,9 @@ class mutations_lineage(mutations):
                 tmp['mutation_links']=mutation_id['mutation_links'];
                 tmp['mutation_type']=mutation_id['mutation_type'];
                 tmp['used_']=mutation_id['used_'];
-                tmp['comment_']=mutation_id['comment_'];
                 for mutation in lineage_data:
                     if sample_name == mutation['sample_name'] and mutation_id['mutation_id'] == mutation['mutation_id']:
                         tmp['mutation_frequency']=mutation['mutation_frequency'];
-                        tmp['comment_']=mutation['comment_'];
                         break;
                 data_O.append(tmp);
         # dump chart parameters to a js files

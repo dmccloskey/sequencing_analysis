@@ -82,15 +82,6 @@ class mutations_heatmap(mutations):
         self.dendrogram_col = dendrogram_col_O;
         self.dendrogram_row = dendrogram_row_O;
 
-    def _make_mutationID(self,mutation_genes,mutation_type,mutation_position):
-        '''return a unique mutation id string'''
-        mutation_genes_str = '';
-        for gene in mutation_genes:
-            mutation_genes_str = mutation_genes_str + gene + '-/-'
-        mutation_genes_str = mutation_genes_str[:-3];
-        mutation_id = mutation_type + '_' + mutation_genes_str + '_' + str(mutation_position);
-        return mutation_id;
-
     def clear_data(self):
         del self.mutations[:];
         del self.heatmap[:];
