@@ -60,6 +60,7 @@ class fpkms_heatmap(fpkms):
                 for row in fpkm_data:
                     if row['gene_short_name'] == fpkm and row['sample_name'] == sample_name:
                         data_O[sample_name_cnt,fpkm_cnt] = row['FPKM'];
+                        break;
         # generate the clustering for the heatmap
         heatmap_O = [];
         dendrogram_col_O = {};
