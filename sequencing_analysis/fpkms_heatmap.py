@@ -1,6 +1,6 @@
 from io_utilities.base_importData import base_importData
 from io_utilities.base_exportData import base_exportData
-from .genome_diff_genesFpkmTracking import genesFpkmTracking
+from .fpkms import fpkms
 from calculate_utilities.base_calculate import base_calculate
 import numpy
 import json
@@ -45,11 +45,9 @@ class fpkms_heatmap(fpkms):
         # partition into variables:
         fpkm_data = self.genesFpkmTracking;
         sample_names = self.sample_names;
-        fpkm_data_O = [];
         genes_all = [];
         for end_cnt,fpkm in enumerate(fpkm_data):
-            fpkm_data_O.append(tmp);
-            genes_all.append(gene);
+            genes_all.append(fpkm['gene_short_name']);
         genes_all_unique = list(set(genes_all));
         genes = [x for x in genes_all_unique if not x in gene_exclusion_list];
         # generate the frequency matrix data structure (fpkm x intermediate)
@@ -59,9 +57,9 @@ class fpkms_heatmap(fpkms):
         for sample_name_cnt,sample_name in enumerate(sample_names): #all samples for intermediate j / fpkm i
             samples.append(sample_name); # corresponding label from hierarchical clustering
             for fpkm_cnt,fpkm in enumerate(genes): #all genesFpkmTracking i for intermediate j
-                for row in fpkm_data_O:
-                    if row['gene'] == fpkm and row['sample_name'] == sample_name:
-                        data_O[sample_name_cnt,fpkm_cnt] = row['fpkm_frequency'];
+                for row in fpkm_data:
+                    if row['gene_short_name'] == fpkm and row['sample_name'] == sample_name:
+                        data_O[sample_name_cnt,fpkm_cnt] = row['FPKM'];
         # generate the clustering for the heatmap
         heatmap_O = [];
         dendrogram_col_O = {};
@@ -87,11 +85,10 @@ class fpkms_heatmap(fpkms):
         data_O = self.heatmap;
         # dump chart parameters to a js files
         data1_keys = [
-            'analysis_id',
                       'row_label','col_label','row_index','col_index','row_leaves','col_leaves',
                 'col_pdist_metric','row_pdist_metric','col_linkage_method','row_linkage_method',
                 'value_units']
-        data1_nestkeys = ['analysis_id'];
+        data1_nestkeys = ['value_units'];
         data1_keymap = {'xdata':'row_leaves','ydata':'col_leaves','zdata':'value',
                 'rowslabel':'row_label','columnslabel':'col_label',
                 'rowsindex':'row_index','columnsindex':'col_index',
