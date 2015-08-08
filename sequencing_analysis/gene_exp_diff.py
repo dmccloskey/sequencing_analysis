@@ -8,7 +8,7 @@ class gene_exp_diff():
         else:
             self.geneExpDiff = [];
 
-    def import_geneExpDiff(self,filename_I,experiment_id_1_I=None,experiment_id_2_I=None,sample_name_abbreviation_1_I=None,sample_abbreviation_2_I=None):
+    def import_geneExpDiff(self,filename_I,experiment_id_1_I=None,experiment_id_2_I=None,sample_name_abbreviation_1_I=None,sample_name_abbreviation_2_I=None):
         """import geneExpDiff
         INPUT:
         filename_I = input filename
@@ -23,11 +23,11 @@ class gene_exp_diff():
         sample_name_abbreviation_2_I = string, name of the sample
         """
         io = base_importData();
-        io.read_csv(filename_I);
+        io.read_tab(filename_I);
         geneExpDiff = self.format_geneExpDiff(io.data);
         for d in geneExpDiff:
             d['experiment_id_1'] = experiment_id_1_I;
-            d['experiment_id'] = experiment_id_2_I;
+            d['experiment_id_2'] = experiment_id_2_I;
             d['sample_name_abbreviation_1'] = sample_name_abbreviation_1_I;
             d['sample_name_abbreviation_2'] = sample_name_abbreviation_2_I;
         self.geneExpDiff = geneExpDiff;
