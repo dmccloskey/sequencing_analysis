@@ -78,12 +78,16 @@ class gene_exp_diff():
         
         #get the data for the analysis
         data_O = [];
-        data_O = self.geneExpDiff
+        data_O = self.geneExpDiff;
+        # transform p_value to -log10(p_value)
+        for d in data_O:
+            if not '-log10(p_value)' in d:
+                d['-log10(p_value)']=-log(d['p_value'],10.0);
         # make the data parameters
-        data1_keys = ['experiment_id_1','experiment_id_2','sample_name_abbreviation_1','sample_name_abbreviation_2','gene','log2(fold_change)','p_value'
+        data1_keys = ['experiment_id_1','experiment_id_2','sample_name_abbreviation_1','sample_name_abbreviation_2','gene','log2(fold_change)','-log10(p_value)','significant'
                     ];
         data1_nestkeys = ['experiment_id_1'];
-        data1_keymap = {'ydata':'p_value',
+        data1_keymap = {'ydata':'-log10(p_value)',
                         'xdata':'log2(fold_change)',
                         'serieslabel':'',
                         'featureslabel':'gene'};
