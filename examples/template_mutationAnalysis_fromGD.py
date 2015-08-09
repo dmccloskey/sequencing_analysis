@@ -48,6 +48,16 @@ for cnt,filename in enumerate(filenames_I):
 mutationslineage = mutations_lineage(lineage_name_I = 'tpiAEvo01',
                                      lineage_sample_names_I = {0:"Evo04tpiA",1:"Evo04tpiAEvo01EP"});
 mutationslineage.import_mutations(['Evo04tpiA.csv','Evo04tpiAEvo01EP.csv']);
+
+#visualize all mutations prior to filtering out mutations that do not persist to the end-point:
+mutationslineage.annotate_mutations(table_I = 'mutations',
+                          ref_genome_I = 'C:/Users/dmccloskey-sbrg/Documents/GitHub/sbaas/sbaas/data/U00096.2.gb',
+                          ref_I = 'genbank',
+                          geneReference_I = 'C:/Users/dmccloskey-sbrg/Documents/GitHub/sbaas_workspace/sbaas_workspace/workspace_data/_input/150527_MG1655_geneReference.csv',
+                          biologicalmaterial_id_I = 'MG1655')
+mutationslineage.export_lineage_js();
+
+#filter out mutations that do not persist to the end-point:
 mutationslineage.analyze_lineage_population();
 mutationslineage.export_mutationsLineage('lineage.csv');
 mutationslineage.annotate_mutations(table_I = 'mutationsLineage',

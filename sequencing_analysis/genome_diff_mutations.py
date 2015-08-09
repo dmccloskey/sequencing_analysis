@@ -21,9 +21,8 @@ class mutations(genome_diff):
         io = base_importData();
         for filename in filenames_I:
             io.read_csv(filename);
-            self.mutations.extend(io.data);
+            self.mutations.extend(self.format_mutationData(io.data));
             io.clear_data();
-        mutationData = self.format_mutationData(self.mutations);
 
     def _get_mutationsBySampleName(self,data_I,sample_name_I):
         """return mutations that match the sample_name"""
