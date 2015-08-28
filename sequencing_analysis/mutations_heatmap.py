@@ -34,7 +34,7 @@ class mutations_heatmap(mutations):
             self.dendrogram_row=dendrogram_row_I;
         else:
             self.dendrogram_row = [];
-    def make_heatmap(self, mutation_id_exclusion_list=[],max_position=4000000,
+    def make_heatmap(self,mutations_I=[],sample_names_I=[], mutation_id_exclusion_list=[],max_position=4000000,
                 row_pdist_metric_I='euclidean',row_linkage_method_I='complete',
                 col_pdist_metric_I='euclidean',col_linkage_method_I='complete'):
         '''Execute hierarchical cluster on row and column data'''
@@ -43,8 +43,10 @@ class mutations_heatmap(mutations):
         calculate = base_calculate();
 
         # partition into variables:
-        mutation_data = self.mutations;
-        sample_names = self.sample_names;
+        if mutations_I: mutation_data = mutations_I;
+        else: mutation_data = self.mutations;
+        if sample_names_I: sample_names = sample_names_I;
+        else: sample_names = self.sample_names;
         mutation_data_O = [];
         mutation_ids_all = [];
         for end_cnt,mutation in enumerate(mutation_data):

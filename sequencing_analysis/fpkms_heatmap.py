@@ -34,7 +34,7 @@ class fpkms_heatmap(fpkms):
             self.dendrogram_row=dendrogram_row_I;
         else:
             self.dendrogram_row = [];
-    def make_heatmap(self, gene_exclusion_list=[],
+    def make_heatmap(self, genesFpkmTracking_I=[],sample_names_I=[],gene_exclusion_list=[],
                 row_pdist_metric_I='euclidean',row_linkage_method_I='complete',
                 col_pdist_metric_I='euclidean',col_linkage_method_I='complete'):
         '''Execute hierarchical cluster on row and column data'''
@@ -43,8 +43,10 @@ class fpkms_heatmap(fpkms):
         calculate = base_calculate();
 
         # partition into variables:
-        fpkm_data = self.genesFpkmTracking;
-        sample_names = self.sample_names;
+        if genesFpkmTracking_I: fpkm_data = genesFpkmTracking_I;
+        else: fpkm_data = self.genesFpkmTracking;
+        if sample_names_I: sample_names = sample_names_I;
+        else: sample_names = self.sample_names;
         genes_all = [];
         for end_cnt,fpkm in enumerate(fpkm_data):
             genes_all.append(fpkm['gene_short_name']);
