@@ -332,6 +332,16 @@ class genome_annotations():
         sequence_O = Seq(sequence_str_I, generic_dna);
         return sequence_O;
 
+    def check_stopCodon(self,peptide_I):
+        '''Check for a stop codon at the end of the peptide sequence'''
+        has_stop_codon = False;
+        if peptide_I[-1]!='*':
+            print('stop codon not found');
+        else: 
+            has_stop_codon = True;
+        return has_stop_codon;
+
+
     def transcribeAndTranslate_feature(self,sequence_I,feature_I,table_I = "Standard"):
         '''Transcribe and translate a feature from a reference sequence
         INPUT:
@@ -341,40 +351,52 @@ class genome_annotations():
         OUTPUT:
         feature_sequence = sequence object of the dna sequence
         rna = sequence object of the rna sequence
-        peptide = sequence object of the peptide sequence'''
+        peptide = sequence object of the peptide sequence
+        stop_codon_found = Boolean, True if a stop codon was found
+        '''
 
         feature_sequence = feature_I.extract(sequence_I);
-        if feature_I.location.strand != -1:
-            rna = feature_sequence.reverse_complement().transcribe();
-        else:
-            rna = feature_sequence.transcribe();
+        ## check for strand orientation not needed:
+        #if feature_I.location.strand != -1:
+        #    rna = feature_sequence.reverse_complement().transcribe();
+        #else:
+        #    rna = feature_sequence.transcribe();
+        rna = feature_sequence.transcribe();
+        peptide = rna.translate(table=table_I,to_stop=False);
+        has_stop_codon = self.check_stopCodon(peptide);
         peptide = rna.translate(table=table_I,to_stop=True);
 
-        return feature_sequence, rna, peptide;
+        return feature_sequence, rna, peptide, has_stop_codon;
 
-    def mutate_sequence(self,sequence_I,mutation_I):
+    def mutate_sequence(self,sequence_I,mutation_I,feature_I):
         '''mutate a sequence
         INPUT:
         sequence_I = sequence object
         mutation_I = {} mutation information
+        feature_I = feature object
         OUTPUT:
         sequence_O = sequence object
         '''
         sequence_O_str = list(sequence_I.lower());
+        feature_O = feature_I;
 
         #parse the mutation dict
         if 'position' in mutation_I: mutation_position_I = mutation_I['position'];
         if 'type' in mutation_I: mutation_type_I = mutation_I['type'];
         if 'new_seq' in mutation_I: new_seq_I = mutation_I['new_seq'].lower();
         if 'size' in mutation_I: size_I = mutation_I['size'];
+        elif 'new_seq' in mutation_I: size_I = len(new_seq_I);
+        else: size_I = 0;
         if 'new_copy_number' in mutation_I: new_copy_number_I = mutation_I['new_copy_number'];
 
         if mutation_type_I=='SNP':
             sequence_O_str[mutation_position_I-1]=new_seq_I;
         elif mutation_type_I=='DEL':
             sequence_O_str=sequence_O_str[:mutation_position_I-1]+sequence_O_str[mutation_position_I-1+size_I:];
+            feature_O.location._end = feature_I.location.end - size_I; # adjust the feature length
         elif mutation_type_I=='INS':
-            sequence_O_str = sequence_O_str[:mutation_position_I-1] + list(new_seq_I) + sequence_O_str[mutation_position_I:];
+            sequence_O_str = sequence_O_str[:mutation_position_I-1] + list(new_seq_I) + sequence_O_str[mutation_position_I-1:];
+            feature_O.location._end = feature_I.location.end + len(new_seq_I); # adjust the feature length
         elif mutation_type_I=='SUB':
             sequence_O_str[mutation_position_I-1:mutation_position_I-1+size_I]=list(new_seq_I);
         elif mutation_type_I=='AMP':
@@ -383,13 +405,14 @@ class genome_annotations():
             for n in range(new_copy_number_I):
                 new_seq_I.append(amp_seq);
             sequence_O_str = sequence_O_str[:mutation_position_I-1] + list(new_seq_I) + sequence_O_str[mutation_position_I-1+size_I:];
+            feature_O.location._end = feature_I.location.end + len(new_seq_I); # adjust the feature length
         else:
             print('mutation type ' +mutation_type_I+' not yet supported!');
-            return None;
+            return None,feature_O;
 
         sequence_O_str = ''.join(sequence_O_str);
         sequence_O = self.make_SeqFromString(sequence_O_str);
-        return sequence_O;
+        return sequence_O,feature_O;
         
     def _mutate_peptideFromMutationData(self,mutation_I,annotation_I=None,sequence_I=None,translation_table_I='Bacterial'):
         '''mutation dna, rna, and peptide sequences if the position given the reference genome
@@ -409,6 +432,8 @@ class genome_annotations():
         if 'type' in mutation_I: mutation_type_I = mutation_I['type'];
         if 'new_seq' in mutation_I: new_seq_I = mutation_I['new_seq'].lower();
         if 'size' in mutation_I: size_I = mutation_I['size'];
+        elif 'new_seq' in mutation_I: size_I = len(new_seq_I);
+        else: size_I = 0;
         if 'new_copy_number' in mutation_I: new_copy_number_I = mutation_I['new_copy_number'];
 
         snp_records = {};
@@ -424,108 +449,38 @@ class genome_annotations():
         snp_records['rna_sequence_new'] = ''
         snp_records['peptide_sequence_ref'] = ''
         snp_records['peptide_sequence_new'] = ''
-        snp_records['mutation_class'] = None;
+        snp_records['peptide_feature_position'] = None;
+        snp_records['peptide_feature_ref'] = None;
+        snp_records['peptide_feature_new'] = None;
+        snp_records['peptide_feature_position'] = None;
+        snp_records['peptide_feature_ref'] = None;
+        snp_records['peptide_feature_new'] = None;
+        snp_records['mutation_class'] = [];
         # find features in the coding region of the genome that bracket the mutation position
         for feature_cnt,feature in enumerate(annotation_I.features):
             if mutation_position_I in feature and feature.type == 'CDS':
+                # extract out the original dna, rna, and peptide sequences
+                dna,rna,peptide,has_stop_codon = self.transcribeAndTranslate_feature(sequence_I.seq,feature,table_I=translation_table_I);
+                # mutate the sequence and adjust the feature size
+                sequence_new,feature_new = self.mutate_sequence(sequence_I.seq,mutation_I,feature);
+                if sequence_new is None:
+                    break;
+                # extract out the new dna, rna, and peptide sequences
+                dna_new,rna_new,peptide_new,has_stop_codon_new = self.transcribeAndTranslate_feature(sequence_new,feature_new,table_I=translation_table_I);
+                # convert to string output
                 snp_records['gene'] = feature.qualifiers.get('gene')
                 snp_records['location'] = ['coding'];
-                # extract out the original dna, rna, and peptide sequences
-                dna,rna,peptide = self.transcribeAndTranslate_feature(sequence_I.seq,feature,table_I=translation_table_I);
-                # mutate the sequence
-                sequence_new = self.mutate_sequence(sequence_I.seq,mutation_I);
-                # extract out the new dna, rna, and peptide sequences
-                dna_new,rna_new,peptide_new = self.transcribeAndTranslate_feature(sequence_new,feature,table_I=translation_table_I);
-                # convert to string output
                 snp_records['dna_sequence_ref'] = self.convert_Seq2String(dna);
                 snp_records['dna_sequence_new'] = self.convert_Seq2String(dna_new);
                 snp_records['rna_sequence_ref'] = self.convert_Seq2String(rna);
                 snp_records['rna_sequence_new'] = self.convert_Seq2String(rna_new);
                 snp_records['peptide_sequence_ref'] = self.convert_Seq2String(peptide);
                 snp_records['peptide_sequence_new'] = self.convert_Seq2String(peptide_new);
-                # check for synonymous mutations
-                if mutation_type_I=='SNP':
-                    # check if the peptide sequence changed
-                    pos,old,new=[],[],[];
-                    pos,old,new = self.compare2sequences(dna,dna_new);
-                    snp_records['feature_position'] = pos[0];
-                    snp_records['feature_ref'] = old[0];
-                    snp_records['feature_new'] = new_seq_I;
-                    pos,old,new=[],[],[];
-                    pos,old,new = self.compare2sequences(peptide,peptide_new);
-                    if pos:
-                        snp_records['mutation_class'] = 'nonsynonymous';
-                    else:
-                        snp_records['mutation_class'] = 'synonymous';
-                    snp_records['peptide_feature_position'] = pos[0];
-                    snp_records['peptide_feature_ref'] = old[0];
-                    snp_records['peptide_feature_new'] = new[0];
-                elif mutation_type_I=='SUB':
-                    # check if the peptide sequence changed
-                    pos,old,new=[],[],[];
-                    pos,old,new = self.compare2sequences(dna,dna_new);
-                    snp_records['feature_position'] = pos[0];
-                    snp_records['feature_ref'] = old[0];
-                    snp_records['feature_new'] = new_seq_I;
-                    pos,old,new=[],[],[];
-                    pos,old,new = self.compare2sequences(peptide,peptide_new);
-                    if pos:
-                        snp_records['mutation_class'] = 'nonsynonymous';
-                    else:
-                        snp_records['mutation_class'] = 'synonymous';
-                    snp_records['peptide_feature_position'] = pos[0];
-                    snp_records['peptide_feature_ref'] = old[0];
-                    snp_records['peptide_feature_new'] = new[0];
-                # check for frameshift mutations
-                elif mutation_type_I=='DEL':
-                    pos,old,new=[],[],[];
-                    pos,old,new = self.compare2sequences(dna,dna_new);
-                    snp_records['feature_position'] = pos[0];
-                    snp_records['feature_ref'] = old[0];
-                    snp_records['feature_new'] = new_seq_I;
-                    if size_I%3 == 0:
-                        snp_records['mutation_class'] = 'nonframeshift';
-                    else:
-                        snp_records['mutation_class'] = 'frameshift';
-                    pos,old,new=[],[],[];
-                    pos,old,new = self.compare2sequences(peptide,peptide_new);
-                    snp_records['peptide_feature_position'] = pos[0];
-                    snp_records['peptide_feature_ref'] = old[0];
-                    snp_records['peptide_feature_new'] = new[0];
-                elif mutation_type_I=='INS':
-                    pos,old,new=[],[],[];
-                    pos,old,new = self.compare2sequences(dna,dna_new);
-                    snp_records['feature_position'] = pos[0];
-                    snp_records['feature_ref'] = old[0];
-                    snp_records['feature_new'] = new_seq_I;
-                    if size_I%3 == 0:
-                        snp_records['mutation_class'] = 'nonframeshift';
-                    else:
-                        snp_records['mutation_class'] = 'frameshift';
-                    pos,old,new=[],[],[];
-                    pos,old,new = self.compare2sequences(peptide,peptide_new);
-                    snp_records['peptide_feature_position'] = pos[0];
-                    snp_records['peptide_feature_ref'] = old[0];
-                    snp_records['peptide_feature_new'] = new[0];
-                elif mutation_type_I=='AMP':
-                    pos,old,new=[],[],[];
-                    pos,old,new = self.compare2sequences(dna,dna_new);
-                    snp_records['feature_position'] = pos[0];
-                    snp_records['feature_old'] = old[0];
-                    amp_seq = snp_records['dna_sequence_ref'][old[0]-1:old[0]-1+size_I];
-                    new_seq_I = [];
-                    for n in range(new_copy_number_I):
-                        new_seq_I.append(amp_seq);
-                    snp_records['feature_new'] = new_seq_I;
-                    if size_I%3 == 0:
-                        snp_records['mutation_class'] = 'nonframeshift';
-                    else:
-                        snp_records['mutation_class'] = 'frameshift';
-                    pos,old,new=[],[],[];
-                    pos,old,new = self.compare2sequences(peptide,peptide_new);
-                    snp_records['peptide_feature_position'] = pos[0];
-                    snp_records['peptide_feature_ref'] = old[0];
-                    snp_records['peptide_feature_new'] = new[0];
+                # determine the mutation class
+                mutation_class = {};
+                mutation_class = self.classify_mutation(mutation_I,dna,rna,peptide,has_stop_codon,
+                                                        dna_new,rna_new,peptide_new,has_stop_codon_new);
+                snp_records.update(mutation_class);
                 break;
         return snp_records;
     def compare2sequences(self,sequence_1,sequence_2):
@@ -561,4 +516,265 @@ class genome_annotations():
                     old_sequences.append(p);
                     new_sequences.append(sequence_2[cnt]);
         return changed_pos, old_sequences, new_sequences;
+
+    def convert_ntSize2AASize(self,nt_size_I):
+        '''convert nucleotide size to AA size'''
+        aa_size = nt_size_I/3;
+        aa_size_O = int(aa_size) + 1;
+        return aa_size_O;
+
+    def classify_mutation(self,mutation_I,
+                          dna,rna,peptide,has_stop_codon,
+                          dna_new,rna_new,peptide_new,has_stop_codon_new):
+        '''classify the type of mutation'''
+
+        #parse the mutation dict
+        if 'position' in mutation_I: mutation_position_I = mutation_I['position'];
+        if 'type' in mutation_I: mutation_type_I = mutation_I['type'];
+        if 'new_seq' in mutation_I: new_seq_I = mutation_I['new_seq'].lower();
+        if 'size' in mutation_I: size_I = mutation_I['size'];
+        elif 'new_seq' in mutation_I: size_I = len(new_seq_I);
+        else: size_I = 1;
+        if 'new_copy_number' in mutation_I: new_copy_number_I = mutation_I['new_copy_number'];
+
+        aa_size_I = self.convert_ntSize2AASize(size_I);
+
+        mutation_class = {};
+        mutation_class['dna_feature_position'] = None;
+        mutation_class['dna_feature_ref'] = None;
+        mutation_class['dna_feature_new'] = None;
+        mutation_class['rna_feature_position'] = None;
+        mutation_class['rna_feature_ref'] = None;
+        mutation_class['rna_feature_new'] = None;
+        mutation_class['peptide_feature_position'] = None;
+        mutation_class['peptide_feature_ref'] = None;
+        mutation_class['peptide_feature_new'] = None;
+        mutation_class['mutation_class'] = [];
+        if mutation_type_I=='SNP':
+            pos,old,new=[],[],[];
+            pos,old,new = self.compare2sequences(dna,dna_new);
+            mutation_class['dna_feature_position'] = pos[0];
+            mutation_class['dna_feature_ref'] = old[0];
+            mutation_class['dna_feature_new'] = new_seq_I;
+            pos,old,new=[],[],[];
+            pos,old,new = self.compare2sequences(rna,rna_new);
+            mutation_class['rna_feature_position'] = pos[0];
+            mutation_class['rna_feature_ref'] = old[0];
+            mutation_class['rna_feature_new'] = new[0];
+            if pos and len(rna)>len(rna_new):
+                mutation_class['mutation_class'].append('truncated transcript');
+            pos,old,new=[],[],[];
+            pos,old,new = self.compare2sequences(peptide,peptide_new);
+            if pos and len(peptide)==len(peptide_new):
+                mutation_class['mutation_class'].append('missense');
+            elif pos and len(peptide_new)<pos[0]+aa_size_I:
+                mutation_class['mutation_class'].append('nonsense');
+            elif pos and len(peptide)!=len(peptide_new) and len(peptide)<len(peptide_new) and not has_stop_codon_new:
+                mutation_class['mutation_class'].append('nonsynonymous');
+                mutation_class['mutation_class'].append('no stop codon');
+                mutation_class['mutation_class'].append('truncated peptide');
+            elif pos and len(peptide)!=len(peptide_new) and len(peptide)<len(peptide_new):
+                mutation_class['mutation_class'].append('nonsynonymous');
+                mutation_class['mutation_class'].append('truncated peptide');
+            elif pos and len(peptide)!=len(peptide_new) and not has_stop_codon_new:
+                mutation_class['mutation_class'].append('nonsynonymous');
+                mutation_class['mutation_class'].append('no stop codon');
+            elif pos and len(peptide)!=len(peptide_new):
+                mutation_class['mutation_class'].append('nonsynonymous');
+            else:
+                mutation_class['mutation_class'].append('synonymous');
+            if pos:
+                mutation_class['peptide_feature_position'] = pos[0];
+                mutation_class['peptide_feature_ref'] = old[0];
+                mutation_class['peptide_feature_new'] = new[0];
+            else:
+                mutation_class['peptide_feature_position'] = None;
+                mutation_class['peptide_feature_ref'] = None;
+                mutation_class['peptide_feature_new'] = None;
+        elif mutation_type_I=='SUB':
+            # check if the peptide sequence changed
+            pos,old,new=[],[],[];
+            pos,old,new = self.compare2sequences(dna,dna_new);
+            mutation_class['dna_feature_position'] = pos[0];
+            mutation_class['dna_feature_ref'] = old[0];
+            mutation_class['dna_feature_new'] = new_seq_I;
+            pos,old,new=[],[],[];
+            pos,old,new = self.compare2sequences(rna,rna_new);
+            mutation_class['rna_feature_position'] = pos[0];
+            mutation_class['rna_feature_ref'] = old[0];
+            mutation_class['rna_feature_new'] = new[0];
+            if pos and len(rna)>len(rna_new):
+                mutation_class['mutation_class'].append('truncated transcript');
+            pos,old,new=[],[],[];
+            pos,old,new = self.compare2sequences(peptide,peptide_new);
+            if pos and len(peptide)==len(peptide_new):
+                mutation_class['mutation_class'].append('missense');
+            elif pos and len(peptide_new)<pos[0]+aa_size_I:
+                mutation_class['mutation_class'].append('nonsense');
+            elif pos and len(peptide)!=len(peptide_new) and len(peptide)<len(peptide_new) and not has_stop_codon_new:
+                mutation_class['mutation_class'].append('nonsynonymous');
+                mutation_class['mutation_class'].append('no stop codon');
+                mutation_class['mutation_class'].append('truncated peptide');
+            elif pos and len(peptide)!=len(peptide_new) and len(peptide)<len(peptide_new):
+                mutation_class['mutation_class'].append('nonsynonymous');
+                mutation_class['mutation_class'].append('truncated peptide');
+            elif pos and len(peptide)!=len(peptide_new) and not has_stop_codon_new:
+                mutation_class['mutation_class'].append('nonsynonymous');
+                mutation_class['mutation_class'].append('no stop codon');
+            elif pos and len(peptide)!=len(peptide_new):
+                mutation_class['mutation_class'].append('nonsynonymous');
+            else:
+                mutation_class['mutation_class'].append('synonymous');
+            if pos:
+                mutation_class['peptide_feature_position'] = pos[0];
+                mutation_class['peptide_feature_ref'] = old[0];
+                mutation_class['peptide_feature_new'] = new[0];
+            else:
+                mutation_class['peptide_feature_position'] = None;
+                mutation_class['peptide_feature_ref'] = None;
+                mutation_class['peptide_feature_new'] = None;
+        # check for frameshift mutations
+        elif mutation_type_I=='DEL':
+            pos,old,new=[],[],[];
+            pos,old,new = self.compare2sequences(dna,dna_new);
+            mutation_class['dna_feature_position'] = pos[0];
+            mutation_class['dna_feature_ref'] = old[0];
+            mutation_class['dna_feature_new'] = new[0];
+            if size_I%3 == 0:
+                mutation_class['mutation_class'].append('nonframeshift');
+            else:
+                mutation_class['mutation_class'].append('frameshift');
+            pos,old,new=[],[],[];
+            pos,old,new = self.compare2sequences(rna,rna_new);
+            mutation_class['rna_feature_position'] = pos[0];
+            mutation_class['rna_feature_ref'] = old[0];
+            mutation_class['rna_feature_new'] = new[0];
+            if pos and len(rna)-size_I>len(rna_new):
+                mutation_class['mutation_class'].append('truncated transcript');
+            pos,old,new=[],[],[];
+            pos,old,new = self.compare2sequences(peptide,peptide_new);
+            if pos and len(peptide)==len(peptide_new):
+                mutation_class['mutation_class'].append('missense');
+            elif pos and len(peptide_new)<pos[0]:
+                mutation_class['mutation_class'].append('nonsense');
+            elif pos and len(peptide)!=len(peptide_new) and len(peptide)-aa_size_I>len(peptide_new) and not has_stop_codon_new:
+                mutation_class['mutation_class'].append('nonsynonymous');
+                mutation_class['mutation_class'].append('no stop codon');
+                mutation_class['mutation_class'].append('truncated peptide');
+            elif pos and len(peptide)!=len(peptide_new) and len(peptide)-aa_size_I>len(peptide_new):
+                mutation_class['mutation_class'].append('nonsynonymous');
+                mutation_class['mutation_class'].append('truncated peptide');
+            elif pos and len(peptide)!=len(peptide_new) and not has_stop_codon_new:
+                mutation_class['mutation_class'].append('nonsynonymous');
+                mutation_class['mutation_class'].append('no stop codon');
+            elif pos and len(peptide)!=len(peptide_new):
+                mutation_class['mutation_class'].append('nonsynonymous');
+            else:
+                mutation_class['mutation_class'].append('synonymous');
+            if pos:
+                mutation_class['peptide_feature_position'] = pos[0];
+                mutation_class['peptide_feature_ref'] = old[0];
+                mutation_class['peptide_feature_new'] = new[0];
+            else:
+                mutation_class['peptide_feature_position'] = None;
+                mutation_class['peptide_feature_ref'] = None;
+                mutation_class['peptide_feature_new'] = None;
+        elif mutation_type_I=='INS':
+            pos,old,new=[],[],[];
+            pos,old,new = self.compare2sequences(dna,dna_new);
+            mutation_class['dna_feature_position'] = pos[0];
+            mutation_class['dna_feature_ref'] = old[0];
+            mutation_class['dna_feature_new'] = new_seq_I;
+            if size_I%3 == 0:
+                mutation_class['mutation_class'].append('nonframeshift');
+            else:
+                mutation_class['mutation_class'].append('frameshift');
+            pos,old,new=[],[],[];
+            pos,old,new = self.compare2sequences(rna,rna_new);
+            mutation_class['rna_feature_position'] = pos[0];
+            mutation_class['rna_feature_ref'] = old[0];
+            mutation_class['rna_feature_new'] = new[0];
+            if pos and len(rna)+size_I>len(rna_new):
+                mutation_class['mutation_class'].append('truncated transcript');
+            pos,old,new=[],[],[];
+            pos,old,new = self.compare2sequences(peptide,peptide_new);
+            if pos and len(peptide)==len(peptide_new):
+                mutation_class['mutation_class'].append('missense');
+            elif pos and len(peptide_new)<pos[0]+aa_size_I:
+                mutation_class['mutation_class'].append('nonsense');
+            elif pos and len(peptide)!=len(peptide_new) and len(peptide)+aa_size_I>len(peptide_new) and not has_stop_codon_new:
+                mutation_class['mutation_class'].append('nonsynonymous');
+                mutation_class['mutation_class'].append('no stop codon');
+                mutation_class['mutation_class'].append('truncated peptide');
+            elif pos and len(peptide)!=len(peptide_new) and len(peptide)+aa_size_I>len(peptide_new):
+                mutation_class['mutation_class'].append('nonsynonymous');
+                mutation_class['mutation_class'].append('truncated peptide');
+            elif pos and len(peptide)!=len(peptide_new) and not has_stop_codon_new:
+                mutation_class['mutation_class'].append('nonsynonymous');
+                mutation_class['mutation_class'].append('no stop codon');
+            elif pos and len(peptide)!=len(peptide_new):
+                mutation_class['mutation_class'].append('nonsynonymous');
+            else:
+                mutation_class['mutation_class'].append('synonymous');
+            if pos:
+                mutation_class['peptide_feature_position'] = pos[0];
+                mutation_class['peptide_feature_ref'] = old[0];
+                mutation_class['peptide_feature_new'] = new[0];
+            else:
+                mutation_class['peptide_feature_position'] = None;
+                mutation_class['peptide_feature_ref'] = None;
+                mutation_class['peptide_feature_new'] = None;
+        elif mutation_type_I=='AMP':
+            pos,old,new=[],[],[];
+            pos,old,new = self.compare2sequences(dna,dna_new);
+            mutation_class['dna_feature_position'] = pos[0];
+            mutation_class['dna_feature_old'] = old[0];
+            amp_seq = mutation_class['dna_sequence_ref'][old[0]-1:old[0]-1+size_I];
+            new_seq_I = [];
+            for n in range(new_copy_number_I):
+                new_seq_I.append(amp_seq);
+            mutation_class['dna_feature_new'] = new_seq_I;
+            if len(new_seq_I)%3 == 0:
+                mutation_class['mutation_class'].append('nonframeshift');
+            else:
+                mutation_class['mutation_class'].append('frameshift');
+            pos,old,new=[],[],[];
+            pos,old,new = self.compare2sequences(rna,rna_new);
+            mutation_class['rna_feature_position'] = pos[0];
+            mutation_class['rna_feature_ref'] = old[0];
+            mutation_class['rna_feature_new'] = new[0];
+            if pos and len(rna)+len(new_seq_I)>len(rna_new):
+                mutation_class['mutation_class'].append('truncated transcript');
+            aa_size_I = self.convert_ntSize2AASize(size_I);
+            pos,old,new=[],[],[];
+            pos,old,new = self.compare2sequences(peptide,peptide_new);
+            if pos and len(peptide)==len(peptide_new):
+                mutation_class['mutation_class'].append('missense');
+            elif pos and len(peptide_new)<pos[0]+aa_size_I:
+                mutation_class['mutation_class'].append('nonsense');
+            elif pos and len(peptide)!=len(peptide_new) and len(peptide)+aa_size_I>len(peptide_new) and not has_stop_codon_new:
+                mutation_class['mutation_class'].append('nonsynonymous');
+                mutation_class['mutation_class'].append('no stop codon');
+                mutation_class['mutation_class'].append('truncated peptide');
+            elif pos and len(peptide)!=len(peptide_new) and len(peptide)+aa_size_I>len(peptide_new):
+                mutation_class['mutation_class'].append('nonsynonymous');
+                mutation_class['mutation_class'].append('truncated peptide');
+            elif pos and len(peptide)!=len(peptide_new) and not has_stop_codon_new:
+                mutation_class['mutation_class'].append('nonsynonymous');
+                mutation_class['mutation_class'].append('no stop codon');
+            elif pos and len(peptide)!=len(peptide_new):
+                mutation_class['mutation_class'].append('nonsynonymous');
+            else:
+                mutation_class['mutation_class'].append('synonymous');
+            if pos:
+                mutation_class['peptide_feature_position'] = pos[0];
+                mutation_class['peptide_feature_ref'] = old[0];
+                mutation_class['peptide_feature_new'] = new[0];
+            else:
+                mutation_class['peptide_feature_position'] = None;
+                mutation_class['peptide_feature_ref'] = None;
+                mutation_class['peptide_feature_new'] = None;
+        else:
+            print('mutation type ' + mutation_type_I + ' not yet supported.');
+        return mutation_class;
 
