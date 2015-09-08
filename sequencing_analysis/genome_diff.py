@@ -334,3 +334,12 @@ class genome_diff():
         mutation_genes_str = mutation_genes_str[:-3];
         mutation_id = mutation_type + '_' + mutation_genes_str + '_' + str(mutation_position);
         return mutation_id;
+
+    def _make_mutationID2(self,mutation_genes,mutation_type,mutation_position,nt_ref,nt_new):
+        '''return a unique mutation id string'''
+        mutation_genes_str = '';
+        for gene in mutation_genes:
+            mutation_genes_str = mutation_genes_str + gene + '-/-'
+        mutation_genes_str = mutation_genes_str[:-3];
+        mutation_id = mutation_type + '_' + mutation_genes_str + '_' + nt_ref + str(mutation_position) + nt_new;
+        return mutation_id;

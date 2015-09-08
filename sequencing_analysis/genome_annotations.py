@@ -3,6 +3,8 @@ from io_utilities.base_exportData import base_exportData
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.Alphabet import generic_dna
+from Bio import SeqFeature
+from Bio.SeqFeature import FeatureLocation
 
 class genome_annotations():
     '''class for genome annotations'''
@@ -378,7 +380,7 @@ class genome_annotations():
         sequence_O = sequence object
         '''
         sequence_O_str = list(sequence_I.lower());
-        feature_O = feature_I;
+        feature_O = None;
 
         #parse the mutation dict
         if 'position' in mutation_I: mutation_position_I = mutation_I['position'];
@@ -391,21 +393,32 @@ class genome_annotations():
 
         if mutation_type_I=='SNP':
             sequence_O_str[mutation_position_I-1]=new_seq_I;
+            feature_O = feature_I;
         elif mutation_type_I=='DEL':
             sequence_O_str=sequence_O_str[:mutation_position_I-1]+sequence_O_str[mutation_position_I-1+size_I:];
-            feature_O.location._end = feature_I.location.end - size_I; # adjust the feature length
+            feature_O = self.make_SeqFeature(feature_I.location.start,
+                                             feature_I.location.end - size_I,
+                                             feature_I.strand,
+                                             feature_I.type); # adjust the feature length
         elif mutation_type_I=='INS':
             sequence_O_str = sequence_O_str[:mutation_position_I-1] + list(new_seq_I) + sequence_O_str[mutation_position_I-1:];
-            feature_O.location._end = feature_I.location.end + len(new_seq_I); # adjust the feature length
+            feature_O = self.make_SeqFeature(feature_I.location.start,
+                                             feature_I.location.end + len(new_seq_I),
+                                             feature_I.strand,
+                                             feature_I.type); # adjust the feature length
         elif mutation_type_I=='SUB':
             sequence_O_str[mutation_position_I-1:mutation_position_I-1+size_I]=list(new_seq_I);
+            feature_O = feature_I;
         elif mutation_type_I=='AMP':
             amp_seq = sequence_O_str[mutation_position_I-1:mutation_position_I-1+size_I];
             new_seq_I = [];
             for n in range(new_copy_number_I):
                 new_seq_I.append(amp_seq);
             sequence_O_str = sequence_O_str[:mutation_position_I-1] + list(new_seq_I) + sequence_O_str[mutation_position_I-1+size_I:];
-            feature_O.location._end = feature_I.location.end + len(new_seq_I); # adjust the feature length
+            feature_O = self.make_SeqFeature(feature_I.location.start,
+                                             feature_I.location.end + len(new_seq_I),
+                                             feature_I.strand,
+                                             feature_I.type); # adjust the feature length
         else:
             print('mutation type ' +mutation_type_I+' not yet supported!');
             return None,feature_O;
@@ -413,6 +426,24 @@ class genome_annotations():
         sequence_O_str = ''.join(sequence_O_str);
         sequence_O = self.make_SeqFromString(sequence_O_str);
         return sequence_O,feature_O;
+
+    def make_SeqFeature(self,start_pos_I,stop_pos_I,strand_I,type_I,
+                        location_operator_I='',qualifiers_I=None,sub_features_I=None,
+                        ref_I = None,ref_db_I=None):
+        '''Make a new SeqFeature'''
+
+        # 1. Define the start/stop locations
+        my_start_pos = SeqFeature.ExactPosition(start_pos_I)
+        my_end_pos = SeqFeature.ExactPosition(stop_pos_I)
+
+        # 2. Use the locations do define a FeatureLocation
+        my_feature_location = FeatureLocation(my_start_pos,my_end_pos)
+
+        # 4. Create a SeqFeature
+        my_feature = SeqFeature.SeqFeature(location=my_feature_location,strand=strand_I,type=type_I,location_operator=location_operator_I,
+                                           qualifiers=qualifiers_I,sub_features=sub_features_I,ref=ref_I,ref_db=ref_db_I)
+
+        return my_feature;
         
     def _mutate_peptideFromMutationData(self,mutation_I,annotation_I=None,sequence_I=None,translation_table_I='Bacterial'):
         '''mutation dna, rna, and peptide sequences if the position given the reference genome
@@ -694,7 +725,7 @@ class genome_annotations():
             mutation_class['rna_feature_position'] = pos[0];
             mutation_class['rna_feature_ref'] = old[0];
             mutation_class['rna_feature_new'] = new[0];
-            if pos and len(rna)+size_I>len(rna_new):
+            if pos and len(rna)+size_I>len(rna_new)+1:
                 mutation_class['mutation_class'].append('truncated transcript');
             pos,old,new=[],[],[];
             pos,old,new = self.compare2sequences(peptide,peptide_new);
