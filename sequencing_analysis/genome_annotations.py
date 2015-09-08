@@ -337,10 +337,12 @@ class genome_annotations():
     def check_stopCodon(self,peptide_I):
         '''Check for a stop codon at the end of the peptide sequence'''
         has_stop_codon = False;
-        if peptide_I[-1]!='*':
-            print('stop codon not found');
-        else: 
+        if peptide_I and peptide_I[-1]=='*':
             has_stop_codon = True;
+        elif peptide_I and peptide_I[-1]!='*':
+            print('stop codon not found');
+        elif not peptide_I: 
+            print('no peptide');
         return has_stop_codon;
 
 
@@ -584,6 +586,7 @@ class genome_annotations():
         if mutation_type_I=='SNP':
             pos,old,new=[],[],[];
             pos,old,new = self.compare2sequences(dna,dna_new);
+            if not pos or not old or not new: return mutation_class;
             mutation_class['dna_feature_position'] = pos[0];
             mutation_class['dna_feature_ref'] = old[0];
             mutation_class['dna_feature_new'] = new_seq_I;
@@ -626,6 +629,7 @@ class genome_annotations():
             # check if the peptide sequence changed
             pos,old,new=[],[],[];
             pos,old,new = self.compare2sequences(dna,dna_new);
+            if not pos or not old or not new: return mutation_class;
             mutation_class['dna_feature_position'] = pos[0];
             mutation_class['dna_feature_ref'] = old[0];
             mutation_class['dna_feature_new'] = new_seq_I;
@@ -668,6 +672,7 @@ class genome_annotations():
         elif mutation_type_I=='DEL':
             pos,old,new=[],[],[];
             pos,old,new = self.compare2sequences(dna,dna_new);
+            if not pos or not old or not new: return mutation_class;
             mutation_class['dna_feature_position'] = pos[0];
             mutation_class['dna_feature_ref'] = old[0];
             mutation_class['dna_feature_new'] = new[0];
@@ -713,6 +718,7 @@ class genome_annotations():
         elif mutation_type_I=='INS':
             pos,old,new=[],[],[];
             pos,old,new = self.compare2sequences(dna,dna_new);
+            if not pos or not old or not new: return mutation_class;
             mutation_class['dna_feature_position'] = pos[0];
             mutation_class['dna_feature_ref'] = old[0];
             mutation_class['dna_feature_new'] = new_seq_I;
@@ -758,6 +764,7 @@ class genome_annotations():
         elif mutation_type_I=='AMP':
             pos,old,new=[],[],[];
             pos,old,new = self.compare2sequences(dna,dna_new);
+            if not pos or not old or not new: return mutation_class;
             mutation_class['dna_feature_position'] = pos[0];
             mutation_class['dna_feature_old'] = old[0];
             amp_seq = mutation_class['dna_sequence_ref'][old[0]-1:old[0]-1+size_I];

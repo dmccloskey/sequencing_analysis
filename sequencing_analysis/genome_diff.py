@@ -341,5 +341,9 @@ class genome_diff():
         for gene in mutation_genes:
             mutation_genes_str = mutation_genes_str + gene + '-/-'
         mutation_genes_str = mutation_genes_str[:-3];
+
+        if nt_ref is None: nt_ref = '';
+        if nt_new is None: nt_new = '';
+
         mutation_id = mutation_type + '_' + mutation_genes_str + '_' + nt_ref + str(mutation_position) + nt_new;
         return mutation_id;
