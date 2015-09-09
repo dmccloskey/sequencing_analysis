@@ -410,12 +410,16 @@ class genome_annotations():
                                              feature_I.type); # adjust the feature length
         elif mutation_type_I=='SUB':
             sequence_O_str[mutation_position_I-1:mutation_position_I-1+size_I]=list(new_seq_I);
-            feature_O = feature_I;
+            end = feature_I.location.end + len(new_seq_I) - size_I; # deletion + insertion
+            feature_O = self.make_SeqFeature(feature_I.location.start,
+                                             end,
+                                             feature_I.strand,
+                                             feature_I.type); # adjust the feature length
         elif mutation_type_I=='AMP':
             amp_seq = sequence_O_str[mutation_position_I-1:mutation_position_I-1+size_I];
             new_seq_I = [];
             for n in range(new_copy_number_I):
-                new_seq_I.append(amp_seq);
+                new_seq_I.extend(amp_seq);
             sequence_O_str = sequence_O_str[:mutation_position_I-1] + list(new_seq_I) + sequence_O_str[mutation_position_I-1+size_I:];
             feature_O = self.make_SeqFeature(feature_I.location.start,
                                              feature_I.location.end + len(new_seq_I),
@@ -767,11 +771,15 @@ class genome_annotations():
             if not pos or not old or not new: return mutation_class;
             mutation_class['dna_feature_position'] = pos[0];
             mutation_class['dna_feature_old'] = old[0];
-            amp_seq = mutation_class['dna_sequence_ref'][old[0]-1:old[0]-1+size_I];
+            amp_seq = self.convert_Seq2List(dna)[pos[0]-1:pos[0]-1+size_I];
             new_seq_I = [];
             for n in range(new_copy_number_I):
-                new_seq_I.append(amp_seq);
-            mutation_class['dna_feature_new'] = new_seq_I;
+                new_seq_I.extend(amp_seq);
+            # trim the sequence if it is too long
+            if len(new_seq_I)>100:
+                mutation_class['dna_feature_new'] = new[0];
+            else:
+                mutation_class['dna_feature_new'] = new_seq_I;
             if len(new_seq_I)%3 == 0:
                 mutation_class['mutation_class'].append('nonframeshift');
             else:
@@ -783,7 +791,7 @@ class genome_annotations():
             mutation_class['rna_feature_new'] = new[0];
             if pos and len(rna)+len(new_seq_I)>len(rna_new):
                 mutation_class['mutation_class'].append('truncated transcript');
-            aa_size_I = self.convert_ntSize2AASize(size_I);
+            aa_size_I = self.convert_ntSize2AASize(len(new_seq_I));
             pos,old,new=[],[],[];
             pos,old,new = self.compare2sequences(peptide,peptide_new);
             if pos and len(peptide)==len(peptide_new):
