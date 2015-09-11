@@ -539,6 +539,12 @@ class genome_annotations():
                     old_sequences.append(sequence_1[cnt]);
                     new_sequences.append(p);
                     break;
+                # check that a changed position was found
+                # if not, the protein was truncated at the last position
+            if not changed_pos:
+                changed_pos.append(cnt);
+                old_sequences.append(sequence_1[cnt]);
+                new_sequences.append('*');
         elif len(sequence_2)>len(sequence_1):
             for cnt,p in enumerate(sequence_1):
                 if p!=sequence_2[cnt]:
@@ -546,6 +552,12 @@ class genome_annotations():
                     old_sequences.append(p);
                     new_sequences.append(sequence_2[cnt]);
                     break;
+                # check that a changed position was found
+                # if not, the protein was truncated at the last position
+            if not changed_pos:
+                changed_pos.append(cnt);
+                old_sequences.append(sequence_2[cnt]);
+                new_sequences.append('*');
         else:
             for cnt,p in enumerate(sequence_1):
                 if p!=sequence_2[cnt]:
