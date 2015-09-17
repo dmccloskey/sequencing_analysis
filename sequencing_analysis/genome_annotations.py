@@ -8,7 +8,8 @@ from Bio.SeqFeature import FeatureLocation
 
 class genome_annotations():
     '''class for genome annotations'''
-    def __init__(self,annotation_I=None,annotation_ref_I=None,geneReference_I=None,sequence_I=None,sequence_ref_I=None):
+    def __init__(self,annotation_I=None,annotation_ref_I=None,geneReference_I=None,sequence_I=None,sequence_ref_I=None,
+                 IS_sequences_I=None,IS_sequences_ref_I=None):
         
         if annotation_I and annotation_ref_I:
             self.annotation = self.set_annotation(annotation_I,annotation_ref_I);
@@ -18,6 +19,10 @@ class genome_annotations():
             self.sequence = self.set_sequence(sequence_I,sequence_ref_I);
         else:
             self.sequence = None;
+        if IS_sequences_I and IS_sequences_ref_I:
+            self.IS_sequences = self.set_sequences(IS_sequences_I,IS_sequences_ref_I);
+        else:
+            self.IS_sequences = {};
         '''
         geneReference
         d = {};
@@ -50,6 +55,21 @@ class genome_annotations():
         ref_I = reference database, default, 'fasta'
         """
         return SeqIO.read(ref_genome_I,ref_I);
+
+    def set_sequences(self,sequences_I,ref_I='fasta'):
+        """sequences_I = list of sequences
+        ref_I = reference database, default, 'fasta'
+        """
+        '''TODO:
+        from Bio import SeqIO
+            for index, record in enumerate(SeqIO.parse(open("ls_orchid.gbk"), "genbank")):
+                print "index %i, ID = %s, length %i, with %i features" \
+                      % (index, record.id, len(record.seq), len(record.features))
+        '''
+        records = {};
+        for record in SeqIO.parse(open(sequences_I),ref_I):
+            records[record.id] = record;
+        return records;
         
     def _find_genesFromMutationPosition(self,mutation_position_I,annotation_I=None):
         '''find genes at the position or closest to the position given the reference genome
@@ -380,9 +400,12 @@ class genome_annotations():
         feature_I = feature object
         OUTPUT:
         sequence_O = sequence object
+        mutation_O = {} updated mutation information
+        feature_O = feature object
         '''
         sequence_O_str = list(sequence_I.lower());
         feature_O = None;
+        mutation_O = mutation_I;
 
         #parse the mutation dict
         if 'position' in mutation_I: mutation_position_I = mutation_I['position'];
@@ -402,12 +425,14 @@ class genome_annotations():
                                              feature_I.location.end - size_I,
                                              feature_I.strand,
                                              feature_I.type); # adjust the feature length
+            mutation_O['feature_position'] = self.convert_genomePosition2FeaturePosition(mutation_position_I,feature_I);
         elif mutation_type_I=='INS':
             sequence_O_str = sequence_O_str[:mutation_position_I-1] + list(new_seq_I) + sequence_O_str[mutation_position_I-1:];
             feature_O = self.make_SeqFeature(feature_I.location.start,
                                              feature_I.location.end + len(new_seq_I),
                                              feature_I.strand,
                                              feature_I.type); # adjust the feature length
+            mutation_O['feature_position'] = self.convert_genomePosition2FeaturePosition(mutation_position_I,feature_I);
         elif mutation_type_I=='SUB':
             sequence_O_str[mutation_position_I-1:mutation_position_I-1+size_I]=list(new_seq_I);
             end = feature_I.location.end + len(new_seq_I) - size_I; # deletion + insertion
@@ -415,23 +440,55 @@ class genome_annotations():
                                              end,
                                              feature_I.strand,
                                              feature_I.type); # adjust the feature length
+            mutation_O['feature_position'] = self.convert_genomePosition2FeaturePosition(mutation_position_I,feature_I);
         elif mutation_type_I=='AMP':
             amp_seq = sequence_O_str[mutation_position_I-1:mutation_position_I-1+size_I];
             new_seq_I = [];
             for n in range(new_copy_number_I):
                 new_seq_I.extend(amp_seq);
-            sequence_O_str = sequence_O_str[:mutation_position_I-1] + list(new_seq_I) + sequence_O_str[mutation_position_I-1+size_I:];
+            size_I = len(new_seq_I);
+            sequence_O_str = sequence_O_str[:mutation_position_I-1] + new_seq_I + sequence_O_str[mutation_position_I-1+size_I:];
             feature_O = self.make_SeqFeature(feature_I.location.start,
                                              feature_I.location.end + len(new_seq_I),
                                              feature_I.strand,
                                              feature_I.type); # adjust the feature length
+            mutation_O['feature_position'] = self.convert_genomePosition2FeaturePosition(mutation_position_I,feature_I);
+            mutation_O['new_feature_sequence'] = ''.join(new_seq_I);
+        elif mutation_type_I=='MOB':
+            is_name = mutation_I['repeat_name'];
+            duplication_size = mutation_I['duplication_size'];
+            is_sequence = self.get_ISsequence(is_name);
+            if is_sequence:
+                is_sequence_list = self.convert_Seq2List(is_sequence);
+            else:
+                return None,feature_O;
+            new_seq_I = [];
+            for n in range(duplication_size):
+                new_seq_I.extend(is_sequence_list);
+            size_I = len(new_seq_I);
+            sequence_O_str = sequence_O_str[:mutation_position_I-1] + new_seq_I + sequence_O_str[mutation_position_I-1:];
+            feature_O = self.make_SeqFeature(feature_I.location.start,
+                                                feature_I.location.end + len(new_seq_I),
+                                                feature_I.strand,
+                                                feature_I.type); # adjust the feature length
+            mutation_O['feature_position'] = self.convert_genomePosition2FeaturePosition(mutation_position_I,feature_I);
+            mutation_O['new_feature_sequence'] = ''.join(new_seq_I);
         else:
             print('mutation type ' +mutation_type_I+' not yet supported!');
-            return None,feature_O;
+            return None,feature_O,mutation_O;
 
         sequence_O_str = ''.join(sequence_O_str);
         sequence_O = self.make_SeqFromString(sequence_O_str);
-        return sequence_O,feature_O;
+        return sequence_O,feature_O,mutation_O;
+
+    def get_ISsequence(self,is_name_I):
+        '''Get the IS sequence'''
+        if is_name_I in self.IS_sequences:
+            is_sequence = self.IS_sequences[is_name_I]
+            return is_sequence.seq;
+        else:
+            print("IS sequence " + is_name_I + " not found.");
+            return None;
 
     def make_SeqFeature(self,start_pos_I,stop_pos_I,strand_I,type_I,
                         location_operator_I='',qualifiers_I=None,sub_features_I=None,
@@ -480,6 +537,7 @@ class genome_annotations():
         snp_records['EC_number'] = []
         snp_records['product'] = []
         snp_records['location'] = []
+        snp_records['mutation_data'] = mutation_I;
         snp_records['dna_sequence_ref'] = ''
         snp_records['dna_sequence_new'] = ''
         snp_records['rna_sequence_ref'] = ''
@@ -499,7 +557,7 @@ class genome_annotations():
                 # extract out the original dna, rna, and peptide sequences
                 dna,rna,peptide,has_stop_codon = self.transcribeAndTranslate_feature(sequence_I.seq,feature,table_I=translation_table_I);
                 # mutate the sequence and adjust the feature size
-                sequence_new,feature_new = self.mutate_sequence(sequence_I.seq,mutation_I,feature);
+                sequence_new,feature_new,mutation_new = self.mutate_sequence(sequence_I.seq,mutation_I,feature);
                 if sequence_new is None:
                     break;
                 # extract out the new dna, rna, and peptide sequences
@@ -507,6 +565,7 @@ class genome_annotations():
                 # convert to string output
                 snp_records['gene'] = feature.qualifiers.get('gene')
                 snp_records['location'] = ['coding'];
+                snp_records['mutation_data'] = mutation_new;
                 snp_records['dna_sequence_ref'] = self.convert_Seq2String(dna);
                 snp_records['dna_sequence_new'] = self.convert_Seq2String(dna_new);
                 snp_records['rna_sequence_ref'] = self.convert_Seq2String(rna);
@@ -515,8 +574,10 @@ class genome_annotations():
                 snp_records['peptide_sequence_new'] = self.convert_Seq2String(peptide_new);
                 # determine the mutation class
                 mutation_class = {};
-                mutation_class = self.classify_mutation(mutation_I,dna,rna,peptide,has_stop_codon,
+                mutation_class = self.classify_mutation(mutation_new,dna,rna,peptide,has_stop_codon,
                                                         dna_new,rna_new,peptide_new,has_stop_codon_new);
+                #mutation_class = self.classify_mutation(mutation_I,dna,rna,peptide,has_stop_codon,
+                #                                        dna_new,rna_new,peptide_new,has_stop_codon_new);
                 snp_records.update(mutation_class);
                 break;
         return snp_records;
@@ -532,6 +593,7 @@ class genome_annotations():
         changed_pos = [];
         old_sequences = [];
         new_sequences = [];
+        cnt = None; # initialize the counter
         if len(sequence_1)>len(sequence_2):
             for cnt,p in enumerate(sequence_2):
                 if p!=sequence_1[cnt]:
@@ -541,7 +603,7 @@ class genome_annotations():
                     break;
                 # check that a changed position was found
                 # if not, the protein was truncated at the last position
-            if not changed_pos:
+            if not changed_pos and not cnt is None:
                 changed_pos.append(cnt);
                 old_sequences.append(sequence_1[cnt]);
                 new_sequences.append('*');
@@ -554,7 +616,7 @@ class genome_annotations():
                     break;
                 # check that a changed position was found
                 # if not, the protein was truncated at the last position
-            if not changed_pos:
+            if not changed_pos and not cnt is None:
                 changed_pos.append(cnt);
                 old_sequences.append(sequence_2[cnt]);
                 new_sequences.append('*');
@@ -571,6 +633,18 @@ class genome_annotations():
         aa_size = nt_size_I/3;
         aa_size_O = int(aa_size) + 1;
         return aa_size_O;
+
+    def convert_genomePosition2FeaturePosition(self,mutation_position_I,feature_I):
+        """convert genome position to feature position
+        INPUT:
+        mutation_position_I = Int, mutation position in the genome
+        feature_I = SeqFeature object
+        OUTPUT:
+        feature_position_O = Int, mutation position in the feature
+        """
+        feature_position_O = None;
+        feature_position_O = mutation_position_I - int(feature_I.location.start);
+        return feature_position_O;
 
     def classify_mutation(self,mutation_I,
                           dna,rna,peptide,has_stop_codon,
@@ -791,7 +865,9 @@ class genome_annotations():
             if not pos or not old or not new: return mutation_class;
             mutation_class['dna_feature_position'] = pos[0];
             mutation_class['dna_feature_ref'] = old[0];
-            mutation_class['dna_feature_new'] = new_seq_I;
+            mutation_class['dna_feature_new'] = new[0];
+            #new_seq = ''.join(new);
+            #mutation_class['dna_feature_new'] = new_seq_I;
             if size_I%3 == 0:
                 mutation_class['mutation_class'].append('nonframeshift');
             else:
@@ -855,15 +931,83 @@ class genome_annotations():
             if not pos or not old or not new: return mutation_class;
             mutation_class['dna_feature_position'] = pos[0];
             mutation_class['dna_feature_old'] = old[0];
-            amp_seq = self.convert_Seq2List(dna)[pos[0]-1:pos[0]-1+size_I];
-            new_seq_I = [];
-            for n in range(new_copy_number_I):
-                new_seq_I.extend(amp_seq);
+            mutation_class['dna_feature_new'] = new[0];
+            #amp_seq = self.convert_Seq2List(dna)[pos[0]-1:pos[0]-1+size_I];
+            #new_seq_I = [];
+            #for n in range(new_copy_number_I):
+            #    new_seq_I.extend(amp_seq);
             # trim the sequence if it is too long
-            if len(new_seq_I)>100:
-                mutation_class['dna_feature_new'] = new[0];
+            #if len(new_seq_I)>100:
+            #    mutation_class['dna_feature_new'] = new[0];
+            #else:
+            #    mutation_class['dna_feature_new'] = new_seq_I;
+            new_seq_I = mutation_I['new_feature_sequence'];
+            if len(new_seq_I)%3 == 0:
+                mutation_class['mutation_class'].append('nonframeshift');
             else:
-                mutation_class['dna_feature_new'] = new_seq_I;
+                mutation_class['mutation_class'].append('frameshift');
+            pos,old,new=[],[],[];
+            pos,old,new = self.compare2sequences(rna,rna_new);
+            mutation_class['rna_feature_position'] = pos[0];
+            mutation_class['rna_feature_ref'] = old[0];
+            mutation_class['rna_feature_new'] = new[0];
+            if pos and len(rna)+len(new_seq_I)>len(rna_new):
+                mutation_class['mutation_class'].append('truncated transcript');
+            aa_size_I = self.convert_ntSize2AASize(len(new_seq_I));
+            pos,old,new=[],[],[];
+            pos,old,new = self.compare2sequences(peptide,peptide_new);
+            if pos and len(peptide)==len(peptide_new):
+                mutation_class['mutation_class'].append('missense');
+            elif pos and len(peptide_new)<pos[0]+aa_size_I:
+                mutation_class['mutation_class'].append('nonsense');
+            elif pos and len(peptide)!=len(peptide_new) and len(peptide)+aa_size_I>len(peptide_new) and not has_stop_codon_new:
+                mutation_class['mutation_class'].append('nonsynonymous');
+                mutation_class['mutation_class'].append('no stop codon');
+                mutation_class['mutation_class'].append('truncated peptide');
+            elif pos and len(peptide)!=len(peptide_new) and len(peptide)+aa_size_I>len(peptide_new):
+                mutation_class['mutation_class'].append('nonsynonymous');
+                mutation_class['mutation_class'].append('truncated peptide');
+            elif pos and len(peptide)!=len(peptide_new) and not has_stop_codon_new:
+                mutation_class['mutation_class'].append('nonsynonymous');
+                mutation_class['mutation_class'].append('no stop codon');
+                mutation_class['mutation_class'].append('change in peptide length');
+            elif pos and len(peptide)!=len(peptide_new):
+                mutation_class['mutation_class'].append('nonsynonymous');
+                mutation_class['mutation_class'].append('change in peptide length');
+                
+            elif len(peptide)==len(peptide_new):
+                mutation_class['mutation_class'].append('synonymous');
+            elif len(peptide_new)<pos[0]+aa_size_I:
+                mutation_class['mutation_class'].append('nonsense');
+            elif len(peptide)!=len(peptide_new) and len(peptide)+aa_size_I>len(peptide_new) and not has_stop_codon_new:
+                mutation_class['mutation_class'].append('no stop codon');
+                mutation_class['mutation_class'].append('truncated peptide');
+            elif len(peptide)!=len(peptide_new) and len(peptide)+aa_size_I>len(peptide_new):
+                mutation_class['mutation_class'].append('truncated peptide');
+            elif len(peptide)!=len(peptide_new) and not has_stop_codon_new:
+                mutation_class['mutation_class'].append('no stop codon');
+                mutation_class['mutation_class'].append('change in peptide length');
+            elif len(peptide)!=len(peptide_new):
+                mutation_class['mutation_class'].append('change in peptide length');
+
+            else:
+                mutation_class['mutation_class'].append('unclassified mutation');
+            if pos:
+                mutation_class['peptide_feature_position'] = pos[0];
+                mutation_class['peptide_feature_ref'] = old[0];
+                mutation_class['peptide_feature_new'] = new[0];
+            else:
+                mutation_class['peptide_feature_position'] = None;
+                mutation_class['peptide_feature_ref'] = None;
+                mutation_class['peptide_feature_new'] = None;
+        elif mutation_type_I=='MOB':
+            pos,old,new=[],[],[];
+            pos,old,new = self.compare2sequences(dna,dna_new);
+            if not pos or not old or not new: return mutation_class;
+            mutation_class['dna_feature_position'] = pos[0];
+            mutation_class['dna_feature_old'] = old[0];
+            mutation_class['dna_feature_new'] = new[0];
+            new_seq_I = mutation_I['new_feature_sequence'];
             if len(new_seq_I)%3 == 0:
                 mutation_class['mutation_class'].append('nonframeshift');
             else:
