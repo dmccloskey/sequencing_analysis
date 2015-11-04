@@ -365,7 +365,6 @@ class genome_annotations():
             print('no peptide');
         return has_stop_codon;
 
-
     def transcribeAndTranslate_feature(self,sequence_I,feature_I,table_I = "Standard"):
         '''Transcribe and translate a feature from a reference sequence
         INPUT:
