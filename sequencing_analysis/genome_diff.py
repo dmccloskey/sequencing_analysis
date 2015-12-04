@@ -330,6 +330,7 @@ class genome_diff():
         '''return a unique mutation id string'''
         mutation_genes_str = '';
         for gene in mutation_genes:
+            if mutation_genes_str is None: mutation_genes_str = 'unknown';
             mutation_genes_str = mutation_genes_str + gene + '-/-'
         mutation_genes_str = mutation_genes_str[:-3];
         mutation_id = mutation_type + '_' + mutation_genes_str + '_' + str(mutation_position);
