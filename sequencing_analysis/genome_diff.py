@@ -348,3 +348,30 @@ class genome_diff():
 
         mutation_id = mutation_type + '_' + mutation_genes_str + '_' + nt_ref + str(mutation_position) + nt_new;
         return mutation_id;
+
+    def _make_mutationGenesStr(self,mutation_genes):
+        '''return a unique mutation genes list as a string'''
+        mutation_genes_str = '';
+        for gene in mutation_genes:
+            #if mutation_genes_str is None: mutation_genes_str = 'unknown';
+            mutation_genes_str = mutation_genes_str + gene + '-/-'
+        mutation_genes_str = mutation_genes_str[:-3];
+        return mutation_genes_str;
+
+    def _make_mutationLocationsStr(self,mutation_locations):
+        '''return a unique mutation Locations list as a string'''
+        mutation_locations_str = '';
+        for location in mutation_locations:
+            #if mutation_locations_str is None: mutation_locations_str = 'unknown';
+            mutation_locations_str = mutation_locations_str + location + '/'
+        mutation_locations_str = mutation_locations_str[:-1];
+        return mutation_locations_str;
+
+    def _make_mutationClassStr(self,mutation_class):
+        '''return a unique mutation Locations list as a string'''
+        mutation_class_str = '';
+        for location in mutation_class:
+            #if mutation_class_str is None: mutation_class_str = 'unknown';
+            mutation_class_str = mutation_class_str + location + '/'
+        mutation_class_str = mutation_class_str[:-1];
+        return mutation_class_str;
