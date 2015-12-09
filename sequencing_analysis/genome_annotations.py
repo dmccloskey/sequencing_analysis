@@ -648,7 +648,17 @@ class genome_annotations():
     def classify_mutation(self,mutation_I,
                           dna,rna,peptide,has_stop_codon,
                           dna_new,rna_new,peptide_new,has_stop_codon_new):
-        '''classify the type of mutation'''
+        '''classify the type of mutation
+        Classifiers:
+        missense = point mutation (nonsynonymous mutation that results in a different AA)
+        synonymous = point mutation that does not result in a different AA
+        nonsynonymous = 
+        frameshift = a deletion that is not divisible by 3 that changes the downstream reading frame
+        non-frameshift = a deletion that is divisible by 3 that does not change the downstream reading frame
+        no stop codon = no stop codon found in the peptide
+        nonsense = mutation that truncates the peptide at the site of the mutation
+        truncated peptide = peptide with a shorter length than what would be expected
+        '''
 
         #parse the mutation dict
         if 'position' in mutation_I: mutation_position_I = mutation_I['position'];
