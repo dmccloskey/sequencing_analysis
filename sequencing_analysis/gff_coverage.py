@@ -1,7 +1,7 @@
 from io_utilities.base_importData import base_importData
 from io_utilities.base_exportData import base_exportData
 from .general_feature_format import general_feature_format
-from calculate_utilities.base_calculate import base_calculate
+from python_statistics.calculate_interface import calculate_interface
 from .genome_annotations import genome_annotations
 import json
 
@@ -252,7 +252,7 @@ class gff_coverage(general_feature_format):
         stats_O=[];
         experiment_id = experiment_id_I;
         sn = sample_name_I;
-        calculate = base_calculate();
+        calculate = calculate_interface();
         # get the data_dir
         self.set_gffFile(gff_file);
         # extract the strands
@@ -687,7 +687,7 @@ class gff_coverage(general_feature_format):
         sample_name_I = tag for the sample name
         
         """
-        calculate = base_calculate();
+        calculate = calculate_interface();
 
         self.set_gffFile(gff_file);
         filename = self.gff_file;
