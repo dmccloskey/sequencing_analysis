@@ -1,7 +1,7 @@
 from io_utilities.base_importData import base_importData
 from io_utilities.base_exportData import base_exportData
 from .fpkms import fpkms
-from calculate_utilities.base_calculate import base_calculate
+from python_calculate.calculate_interface import calculate_interface
 import numpy
 import json
 
@@ -40,7 +40,7 @@ class fpkms_heatmap(fpkms):
         '''Execute hierarchical cluster on row and column data'''
 
         print('executing heatmap...');
-        calculate = base_calculate();
+        calculate = calculate_interface();
 
         # partition into variables:
         if genesFpkmTracking_I: fpkm_data = genesFpkmTracking_I;

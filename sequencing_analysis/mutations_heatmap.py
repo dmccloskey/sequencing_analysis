@@ -1,7 +1,7 @@
 from io_utilities.base_importData import base_importData
 from io_utilities.base_exportData import base_exportData
 from .genome_diff_mutations import mutations
-from calculate_utilities.base_calculate import base_calculate
+from python_statistics.calculate_interface import calculate_interface
 import numpy
 import json
 
@@ -40,7 +40,7 @@ class mutations_heatmap(mutations):
         '''Execute hierarchical cluster on row and column data'''
 
         print('executing heatmap...');
-        calculate = base_calculate();
+        calculate = calculate_interface();
 
         # partition into variables:
         if mutations_I: mutation_data = mutations_I;
