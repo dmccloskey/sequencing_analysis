@@ -1,7 +1,7 @@
 from io_utilities.base_importData import base_importData
 from io_utilities.base_exportData import base_exportData
 from .genes_fpkm_tracking import genes_fpkm_tracking
-from calculate_utilities.base_calculate import base_calculate
+from python_statistics.calculate_interface import calculate_interface
 
 class fpkms(genes_fpkm_tracking):
     def __init__(self,genesFpkmTracking_I=None,genesFpkmTrackingStats_I=[]):
@@ -59,7 +59,7 @@ class fpkms(genes_fpkm_tracking):
         experiment_id = experiment_id_I;
         sn = sample_name_I;
         genesFpkmTracking = self.genesFpkmTracking;
-        calculate = base_calculate();
+        calculate = calculate_interface();
         # get the uniqueSampleNameAbbreviations
         sna_unique = self._get_uniqueSampleNameAbbreviations();
         for sna in sna_unique:
