@@ -689,6 +689,10 @@ class genome_annotations():
             mutation_class['dna_feature_position'] = pos[0];
             mutation_class['dna_feature_ref'] = old[0];
             mutation_class['dna_feature_new'] = new_seq_I;
+            if pos and len(dna)>len(dna_new):
+                mutation_class['mutation_class'].append('truncated CDS');
+            elif pos and new[0]=='*':
+                mutation_class['mutation_class'].append('truncated CDS');
             pos,old,new=[],[],[];
             pos,old,new = self.compare2sequences(rna,rna_new);
             mutation_class['rna_feature_position'] = pos[0];
@@ -696,25 +700,24 @@ class genome_annotations():
             mutation_class['rna_feature_new'] = new[0];
             if pos and len(rna)>len(rna_new):
                 mutation_class['mutation_class'].append('truncated transcript');
+            elif pos and new[0]=='*':
+                mutation_class['mutation_class'].append('truncated transcript');
             pos,old,new=[],[],[];
             pos,old,new = self.compare2sequences(peptide,peptide_new);
             if pos and len(peptide)==len(peptide_new):
                 mutation_class['mutation_class'].append('missense');
             elif pos and len(peptide_new)<pos[0]+aa_size_I:
                 mutation_class['mutation_class'].append('nonsense');
-            #elif pos and len(peptide)!=len(peptide_new) and len(peptide)<len(peptide_new) and not has_stop_codon_new:
-            elif pos and len(peptide)!=len(peptide_new) and len(peptide)>len(peptide_new) and not has_stop_codon_new:
-                mutation_class['mutation_class'].append('nonsynonymous');
-                mutation_class['mutation_class'].append('no stop codon');
-                mutation_class['mutation_class'].append('truncated peptide');
-            #elif pos and len(peptide)!=len(peptide_new) and len(peptide)<len(peptide_new):
-            elif pos and len(peptide)!=len(peptide_new) and len(peptide)>len(peptide_new):
-                mutation_class['mutation_class'].append('nonsynonymous');
+            elif pos and new[0]=='*':
                 mutation_class['mutation_class'].append('truncated peptide');
             elif pos and len(peptide)!=len(peptide_new) and not has_stop_codon_new:
                 mutation_class['mutation_class'].append('nonsynonymous');
                 mutation_class['mutation_class'].append('no stop codon');
                 mutation_class['mutation_class'].append('change in peptide length');
+            #elif pos and len(peptide)!=len(peptide_new) and len(peptide)<len(peptide_new):
+            elif pos and len(peptide)!=len(peptide_new) and len(peptide)>len(peptide_new):
+                mutation_class['mutation_class'].append('nonsynonymous');
+                mutation_class['mutation_class'].append('truncated peptide');
             elif pos and len(peptide)!=len(peptide_new):
                 mutation_class['mutation_class'].append('nonsynonymous');
                 mutation_class['mutation_class'].append('change in peptide length');
@@ -723,16 +726,14 @@ class genome_annotations():
                 mutation_class['mutation_class'].append('synonymous');
             elif len(peptide_new)<pos[0]+aa_size_I:
                 mutation_class['mutation_class'].append('nonsense');
-            #elif len(peptide)!=len(peptide_new) and len(peptide)<len(peptide_new) and not has_stop_codon_new:
-            elif len(peptide)!=len(peptide_new) and len(peptide)>len(peptide_new) and not has_stop_codon_new:
-                mutation_class['mutation_class'].append('no stop codon');
-                mutation_class['mutation_class'].append('truncated peptide');
-            #elif len(peptide)!=len(peptide_new) and len(peptide)<len(peptide_new):
-            elif len(peptide)!=len(peptide_new) and len(peptide)>len(peptide_new):
+            elif new[0]=='*':
                 mutation_class['mutation_class'].append('truncated peptide');
             elif len(peptide)!=len(peptide_new) and not has_stop_codon_new:
                 mutation_class['mutation_class'].append('no stop codon');
                 mutation_class['mutation_class'].append('change in peptide length');
+            #elif len(peptide)!=len(peptide_new) and len(peptide)<len(peptide_new):
+            elif len(peptide)!=len(peptide_new) and len(peptide)>len(peptide_new):
+                mutation_class['mutation_class'].append('truncated peptide');
             elif len(peptide)!=len(peptide_new):
                 mutation_class['mutation_class'].append('change in peptide length');
 
@@ -754,6 +755,10 @@ class genome_annotations():
             mutation_class['dna_feature_position'] = pos[0];
             mutation_class['dna_feature_ref'] = old[0];
             mutation_class['dna_feature_new'] = new_seq_I;
+            if pos and len(dna)>len(dna_new):
+                mutation_class['mutation_class'].append('truncated CDS');
+            elif pos and new[0]=='*':
+                mutation_class['mutation_class'].append('truncated CDS');
             pos,old,new=[],[],[];
             pos,old,new = self.compare2sequences(rna,rna_new);
             mutation_class['rna_feature_position'] = pos[0];
@@ -761,25 +766,24 @@ class genome_annotations():
             mutation_class['rna_feature_new'] = new[0];
             if pos and len(rna)>len(rna_new):
                 mutation_class['mutation_class'].append('truncated transcript');
+            elif pos and new[0]=='*':
+                mutation_class['mutation_class'].append('truncated transcript');
             pos,old,new=[],[],[];
             pos,old,new = self.compare2sequences(peptide,peptide_new);
             if pos and len(peptide)==len(peptide_new):
                 mutation_class['mutation_class'].append('missense');
             elif pos and len(peptide_new)<pos[0]+aa_size_I:
                 mutation_class['mutation_class'].append('nonsense');
-            #elif pos and len(peptide)!=len(peptide_new) and len(peptide)<len(peptide_new) and not has_stop_codon_new:
-            elif pos and len(peptide)!=len(peptide_new) and len(peptide)>len(peptide_new) and not has_stop_codon_new:
-                mutation_class['mutation_class'].append('nonsynonymous');
-                mutation_class['mutation_class'].append('no stop codon');
-                mutation_class['mutation_class'].append('truncated peptide');
-            #elif pos and len(peptide)!=len(peptide_new) and len(peptide)<len(peptide_new):
-            elif pos and len(peptide)!=len(peptide_new) and len(peptide)>len(peptide_new):
-                mutation_class['mutation_class'].append('nonsynonymous');
+            elif pos and new[0]=='*':
                 mutation_class['mutation_class'].append('truncated peptide');
             elif pos and len(peptide)!=len(peptide_new) and not has_stop_codon_new:
                 mutation_class['mutation_class'].append('nonsynonymous');
                 mutation_class['mutation_class'].append('no stop codon');
                 mutation_class['mutation_class'].append('change in peptide length');
+            #elif pos and len(peptide)!=len(peptide_new) and len(peptide)<len(peptide_new):
+            elif pos and len(peptide)!=len(peptide_new) and len(peptide)>len(peptide_new):
+                mutation_class['mutation_class'].append('nonsynonymous');
+                mutation_class['mutation_class'].append('truncated peptide');
             elif pos and len(peptide)!=len(peptide_new):
                 mutation_class['mutation_class'].append('nonsynonymous');
                 mutation_class['mutation_class'].append('change in peptide length');
@@ -788,16 +792,14 @@ class genome_annotations():
                 mutation_class['mutation_class'].append('synonymous');
             elif len(peptide_new)<pos[0]+aa_size_I:
                 mutation_class['mutation_class'].append('nonsense');
-            #elif len(peptide)!=len(peptide_new) and len(peptide)<len(peptide_new) and not has_stop_codon_new:
-            elif len(peptide)!=len(peptide_new) and len(peptide)>len(peptide_new) and not has_stop_codon_new:
-                mutation_class['mutation_class'].append('no stop codon');
-                mutation_class['mutation_class'].append('truncated peptide');
-            #elif len(peptide)!=len(peptide_new) and len(peptide)<len(peptide_new):
-            elif len(peptide)!=len(peptide_new) and len(peptide)>len(peptide_new):
+            elif new[0]=='*':
                 mutation_class['mutation_class'].append('truncated peptide');
             elif len(peptide)!=len(peptide_new) and not has_stop_codon_new:
                 mutation_class['mutation_class'].append('no stop codon');
                 mutation_class['mutation_class'].append('change in peptide length');
+            #elif len(peptide)!=len(peptide_new) and len(peptide)<len(peptide_new):
+            elif len(peptide)!=len(peptide_new) and len(peptide)>len(peptide_new):
+                mutation_class['mutation_class'].append('truncated peptide');
             elif len(peptide)!=len(peptide_new):
                 mutation_class['mutation_class'].append('change in peptide length');
 
@@ -823,6 +825,10 @@ class genome_annotations():
                 mutation_class['mutation_class'].append('nonframeshift');
             else:
                 mutation_class['mutation_class'].append('frameshift');
+            if pos and len(dna)-size_I>len(dna_new):
+                mutation_class['mutation_class'].append('truncated CDS');
+            elif pos and new[0]=='*':
+                mutation_class['mutation_class'].append('truncated CDS');
             pos,old,new=[],[],[];
             pos,old,new = self.compare2sequences(rna,rna_new);
             mutation_class['rna_feature_position'] = pos[0];
@@ -830,23 +836,23 @@ class genome_annotations():
             mutation_class['rna_feature_new'] = new[0];
             if pos and len(rna)-size_I>len(rna_new):
                 mutation_class['mutation_class'].append('truncated transcript');
+            elif pos and new[0]=='*':
+                mutation_class['mutation_class'].append('truncated transcript');
             pos,old,new=[],[],[];
             pos,old,new = self.compare2sequences(peptide,peptide_new);
             if pos and len(peptide)==len(peptide_new):
                 mutation_class['mutation_class'].append('missense');
             elif pos and len(peptide_new)<pos[0]:
                 mutation_class['mutation_class'].append('nonsense');
-            elif pos and len(peptide)!=len(peptide_new) and len(peptide)-aa_size_I>len(peptide_new) and not has_stop_codon_new:
-                mutation_class['mutation_class'].append('nonsynonymous');
-                mutation_class['mutation_class'].append('no stop codon');
-                mutation_class['mutation_class'].append('truncated peptide');
-            elif pos and len(peptide)!=len(peptide_new) and len(peptide)-aa_size_I>len(peptide_new):
-                mutation_class['mutation_class'].append('nonsynonymous');
+            elif pos and new[0]=='*':
                 mutation_class['mutation_class'].append('truncated peptide');
             elif pos and len(peptide)!=len(peptide_new) and not has_stop_codon_new:
                 mutation_class['mutation_class'].append('nonsynonymous');
                 mutation_class['mutation_class'].append('no stop codon');
                 mutation_class['mutation_class'].append('change in peptide length');
+            elif pos and len(peptide)!=len(peptide_new) and len(peptide)-aa_size_I>len(peptide_new):
+                mutation_class['mutation_class'].append('nonsynonymous');
+                mutation_class['mutation_class'].append('truncated peptide');
             elif pos and len(peptide)!=len(peptide_new):
                 mutation_class['mutation_class'].append('nonsynonymous');
                 mutation_class['mutation_class'].append('change in peptide length');
@@ -855,14 +861,13 @@ class genome_annotations():
                 mutation_class['mutation_class'].append('synonymous');
             elif len(peptide_new)<pos[0]:
                 mutation_class['mutation_class'].append('nonsense');
-            elif len(peptide)!=len(peptide_new) and len(peptide)-aa_size_I>len(peptide_new) and not has_stop_codon_new:
-                mutation_class['mutation_class'].append('no stop codon');
-                mutation_class['mutation_class'].append('truncated peptide');
-            elif len(peptide)!=len(peptide_new) and len(peptide)-aa_size_I>len(peptide_new):
+            elif new[0]=='*':
                 mutation_class['mutation_class'].append('truncated peptide');
             elif len(peptide)!=len(peptide_new) and not has_stop_codon_new:
                 mutation_class['mutation_class'].append('no stop codon');
                 mutation_class['mutation_class'].append('change in peptide length');
+            elif len(peptide)!=len(peptide_new) and len(peptide)-aa_size_I>len(peptide_new):
+                mutation_class['mutation_class'].append('truncated peptide');
             elif len(peptide)!=len(peptide_new):
                 mutation_class['mutation_class'].append('change in peptide length');
 
@@ -889,6 +894,10 @@ class genome_annotations():
                 mutation_class['mutation_class'].append('nonframeshift');
             else:
                 mutation_class['mutation_class'].append('frameshift');
+            if pos and len(dna)+size_I>len(dna_new):
+                mutation_class['mutation_class'].append('truncated CDS');
+            elif pos and new[0]=='*':
+                mutation_class['mutation_class'].append('truncated CDS');
             pos,old,new=[],[],[];
             pos,old,new = self.compare2sequences(rna,rna_new);
             mutation_class['rna_feature_position'] = pos[0];
@@ -896,23 +905,23 @@ class genome_annotations():
             mutation_class['rna_feature_new'] = new[0];
             if pos and len(rna)+size_I>len(rna_new)+1:
                 mutation_class['mutation_class'].append('truncated transcript');
+            elif pos and new[0]=='*':
+                mutation_class['mutation_class'].append('truncated transcript');
             pos,old,new=[],[],[];
             pos,old,new = self.compare2sequences(peptide,peptide_new);
             if pos and len(peptide)==len(peptide_new):
                 mutation_class['mutation_class'].append('missense');
             elif pos and len(peptide_new)<pos[0]+aa_size_I:
                 mutation_class['mutation_class'].append('nonsense');
-            elif pos and len(peptide)!=len(peptide_new) and len(peptide)+aa_size_I>len(peptide_new) and not has_stop_codon_new:
-                mutation_class['mutation_class'].append('nonsynonymous');
-                mutation_class['mutation_class'].append('no stop codon');
-                mutation_class['mutation_class'].append('truncated peptide');
-            elif pos and len(peptide)!=len(peptide_new) and len(peptide)+aa_size_I>len(peptide_new):
-                mutation_class['mutation_class'].append('nonsynonymous');
+            elif pos and new[0]=='*':
                 mutation_class['mutation_class'].append('truncated peptide');
             elif pos and len(peptide)!=len(peptide_new) and not has_stop_codon_new:
                 mutation_class['mutation_class'].append('nonsynonymous');
                 mutation_class['mutation_class'].append('no stop codon');
                 mutation_class['mutation_class'].append('change in peptide length');
+            elif pos and len(peptide)!=len(peptide_new) and len(peptide)+aa_size_I>len(peptide_new):
+                mutation_class['mutation_class'].append('nonsynonymous');
+                mutation_class['mutation_class'].append('truncated peptide');
             elif pos and len(peptide)!=len(peptide_new):
                 mutation_class['mutation_class'].append('nonsynonymous');
                 mutation_class['mutation_class'].append('change in peptide length');
@@ -921,14 +930,13 @@ class genome_annotations():
                 mutation_class['mutation_class'].append('synonymous');
             elif len(peptide_new)<pos[0]+aa_size_I:
                 mutation_class['mutation_class'].append('nonsense');
-            elif len(peptide)!=len(peptide_new) and len(peptide)+aa_size_I>len(peptide_new) and not has_stop_codon_new:
-                mutation_class['mutation_class'].append('no stop codon');
-                mutation_class['mutation_class'].append('truncated peptide');
-            elif len(peptide)!=len(peptide_new) and len(peptide)+aa_size_I>len(peptide_new):
+            elif new[0]=='*':
                 mutation_class['mutation_class'].append('truncated peptide');
             elif len(peptide)!=len(peptide_new) and not has_stop_codon_new:
                 mutation_class['mutation_class'].append('no stop codon');
                 mutation_class['mutation_class'].append('change in peptide length');
+            elif len(peptide)!=len(peptide_new) and len(peptide)+aa_size_I>len(peptide_new):
+                mutation_class['mutation_class'].append('truncated peptide');
             elif len(peptide)!=len(peptide_new):
                 mutation_class['mutation_class'].append('change in peptide length');
 
@@ -963,12 +971,18 @@ class genome_annotations():
                 mutation_class['mutation_class'].append('nonframeshift');
             else:
                 mutation_class['mutation_class'].append('frameshift');
+            if pos and len(dna)+len(new_seq_I)>len(dna_new):
+                mutation_class['mutation_class'].append('truncated CDS');
+            elif pos and new[0]=='*':
+                mutation_class['mutation_class'].append('truncated CDS');
             pos,old,new=[],[],[];
             pos,old,new = self.compare2sequences(rna,rna_new);
             mutation_class['rna_feature_position'] = pos[0];
             mutation_class['rna_feature_ref'] = old[0];
             mutation_class['rna_feature_new'] = new[0];
             if pos and len(rna)+len(new_seq_I)>len(rna_new):
+                mutation_class['mutation_class'].append('truncated transcript');
+            elif pos and new[0]=='*':
                 mutation_class['mutation_class'].append('truncated transcript');
             aa_size_I = self.convert_ntSize2AASize(len(new_seq_I));
             pos,old,new=[],[],[];
@@ -977,17 +991,15 @@ class genome_annotations():
                 mutation_class['mutation_class'].append('missense');
             elif pos and len(peptide_new)<pos[0]+aa_size_I:
                 mutation_class['mutation_class'].append('nonsense');
-            elif pos and len(peptide)!=len(peptide_new) and len(peptide)+aa_size_I>len(peptide_new) and not has_stop_codon_new:
-                mutation_class['mutation_class'].append('nonsynonymous');
-                mutation_class['mutation_class'].append('no stop codon');
-                mutation_class['mutation_class'].append('truncated peptide');
-            elif pos and len(peptide)!=len(peptide_new) and len(peptide)+aa_size_I>len(peptide_new):
-                mutation_class['mutation_class'].append('nonsynonymous');
+            elif pos and new[0]=='*':
                 mutation_class['mutation_class'].append('truncated peptide');
             elif pos and len(peptide)!=len(peptide_new) and not has_stop_codon_new:
                 mutation_class['mutation_class'].append('nonsynonymous');
                 mutation_class['mutation_class'].append('no stop codon');
                 mutation_class['mutation_class'].append('change in peptide length');
+            elif pos and len(peptide)!=len(peptide_new) and len(peptide)+aa_size_I>len(peptide_new):
+                mutation_class['mutation_class'].append('nonsynonymous');
+                mutation_class['mutation_class'].append('truncated peptide');
             elif pos and len(peptide)!=len(peptide_new):
                 mutation_class['mutation_class'].append('nonsynonymous');
                 mutation_class['mutation_class'].append('change in peptide length');
@@ -996,14 +1008,13 @@ class genome_annotations():
                 mutation_class['mutation_class'].append('synonymous');
             elif len(peptide_new)<pos[0]+aa_size_I:
                 mutation_class['mutation_class'].append('nonsense');
-            elif len(peptide)!=len(peptide_new) and len(peptide)+aa_size_I>len(peptide_new) and not has_stop_codon_new:
-                mutation_class['mutation_class'].append('no stop codon');
-                mutation_class['mutation_class'].append('truncated peptide');
-            elif len(peptide)!=len(peptide_new) and len(peptide)+aa_size_I>len(peptide_new):
+            elif new[0]=='*':
                 mutation_class['mutation_class'].append('truncated peptide');
             elif len(peptide)!=len(peptide_new) and not has_stop_codon_new:
                 mutation_class['mutation_class'].append('no stop codon');
                 mutation_class['mutation_class'].append('change in peptide length');
+            elif len(peptide)!=len(peptide_new) and len(peptide)+aa_size_I>len(peptide_new):
+                mutation_class['mutation_class'].append('truncated peptide');
             elif len(peptide)!=len(peptide_new):
                 mutation_class['mutation_class'].append('change in peptide length');
 
@@ -1029,12 +1040,18 @@ class genome_annotations():
                 mutation_class['mutation_class'].append('nonframeshift');
             else:
                 mutation_class['mutation_class'].append('frameshift');
+            if pos and len(dna)+len(new_seq_I)>len(dna_new):
+                mutation_class['mutation_class'].append('truncated CDS');
+            elif pos and new[0]=='*':
+                mutation_class['mutation_class'].append('truncated CDS');
             pos,old,new=[],[],[];
             pos,old,new = self.compare2sequences(rna,rna_new);
             mutation_class['rna_feature_position'] = pos[0];
             mutation_class['rna_feature_ref'] = old[0];
             mutation_class['rna_feature_new'] = new[0];
             if pos and len(rna)+len(new_seq_I)>len(rna_new):
+                mutation_class['mutation_class'].append('truncated transcript');
+            elif pos and new[0]=='*':
                 mutation_class['mutation_class'].append('truncated transcript');
             aa_size_I = self.convert_ntSize2AASize(len(new_seq_I));
             pos,old,new=[],[],[];
@@ -1043,17 +1060,15 @@ class genome_annotations():
                 mutation_class['mutation_class'].append('missense');
             elif pos and len(peptide_new)<pos[0]+aa_size_I:
                 mutation_class['mutation_class'].append('nonsense');
-            elif pos and len(peptide)!=len(peptide_new) and len(peptide)+aa_size_I>len(peptide_new) and not has_stop_codon_new:
-                mutation_class['mutation_class'].append('nonsynonymous');
-                mutation_class['mutation_class'].append('no stop codon');
-                mutation_class['mutation_class'].append('truncated peptide');
-            elif pos and len(peptide)!=len(peptide_new) and len(peptide)+aa_size_I>len(peptide_new):
-                mutation_class['mutation_class'].append('nonsynonymous');
+            elif pos and new[0]=='*':
                 mutation_class['mutation_class'].append('truncated peptide');
             elif pos and len(peptide)!=len(peptide_new) and not has_stop_codon_new:
                 mutation_class['mutation_class'].append('nonsynonymous');
                 mutation_class['mutation_class'].append('no stop codon');
                 mutation_class['mutation_class'].append('change in peptide length');
+            elif pos and len(peptide)!=len(peptide_new) and len(peptide)+aa_size_I>len(peptide_new):
+                mutation_class['mutation_class'].append('nonsynonymous');
+                mutation_class['mutation_class'].append('truncated peptide');
             elif pos and len(peptide)!=len(peptide_new):
                 mutation_class['mutation_class'].append('nonsynonymous');
                 mutation_class['mutation_class'].append('change in peptide length');
@@ -1062,14 +1077,13 @@ class genome_annotations():
                 mutation_class['mutation_class'].append('synonymous');
             elif len(peptide_new)<pos[0]+aa_size_I:
                 mutation_class['mutation_class'].append('nonsense');
-            elif len(peptide)!=len(peptide_new) and len(peptide)+aa_size_I>len(peptide_new) and not has_stop_codon_new:
-                mutation_class['mutation_class'].append('no stop codon');
-                mutation_class['mutation_class'].append('truncated peptide');
-            elif len(peptide)!=len(peptide_new) and len(peptide)+aa_size_I>len(peptide_new):
+            elif new[0]=='*':
                 mutation_class['mutation_class'].append('truncated peptide');
             elif len(peptide)!=len(peptide_new) and not has_stop_codon_new:
                 mutation_class['mutation_class'].append('no stop codon');
                 mutation_class['mutation_class'].append('change in peptide length');
+            elif len(peptide)!=len(peptide_new) and len(peptide)+aa_size_I>len(peptide_new):
+                mutation_class['mutation_class'].append('truncated peptide');
             elif len(peptide)!=len(peptide_new):
                 mutation_class['mutation_class'].append('change in peptide length');
 
