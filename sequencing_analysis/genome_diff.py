@@ -375,3 +375,60 @@ class genome_diff():
             mutation_class_str = mutation_class_str + location + '/'
         mutation_class_str = mutation_class_str[:-1];
         return mutation_class_str;
+
+    def _make_mutationSeqChangeHTML(self,
+                mutation_data,
+                dna_start_offset = 3,
+                peptide_start_offset = 1,
+                dna_stop_offset = 18,
+                peptide_stop_offset = 6):
+        '''Make an html tag to highlight the changes to the DNA/RNA/peptide sequence
+        INPUT:
+        OUTPUT:
+        '''
+        dna_ref_html = '';
+        dna_new_html = '';
+        rna_ref_html = '';
+        rna_new_html = '';
+        peptide_ref_html = '';
+        peptide_new_html = '';
+        try:
+            #DNA
+            dna_start_pos = mutation_data['dna_feature_position']-dna_start_offset;
+            dna_stop_pos = mutation_data['dna_feature_position']+dna_stop_offset;
+            dna_ref_html = self._make_mutationSeqChangeHTML_string(mutation_data['dna_sequence_ref'],mutation_data['dna_feature_position'],dna_start_pos,dna_stop_pos);
+            dna_new_html = self._make_mutationSeqChangeHTML_string(mutation_data['dna_sequence_new'],mutation_data['dna_feature_position'],dna_start_pos,dna_stop_pos);
+        except Exception as e:
+            print(e);
+        try:
+            #RNA
+            rna_start_pos = mutation_data['rna_feature_position']-dna_start_offset;
+            rna_stop_pos = mutation_data['rna_feature_position']+dna_stop_offset;
+            rna_ref_html = self._make_mutationSeqChangeHTML_string(mutation_data['rna_sequence_ref'],mutation_data['rna_feature_position'],rna_start_pos,rna_stop_pos);
+            rna_new_html = self._make_mutationSeqChangeHTML_string(mutation_data['rna_sequence_new'],mutation_data['rna_feature_position'],rna_start_pos,rna_stop_pos);
+        except Exception as e:
+            print(e);
+        try:
+            #peptide
+            peptide_start_pos = mutation_data['peptide_feature_position']-peptide_start_offset;
+            peptide_stop_pos = mutation_data['peptide_feature_position']+peptide_stop_offset;
+            peptide_ref_html = self._make_mutationSeqChangeHTML_string(mutation_data['peptide_sequence_ref'],mutation_data['peptide_feature_position'],peptide_start_pos,peptide_stop_pos);
+            peptide_new_html = self._make_mutationSeqChangeHTML_string(mutation_data['peptide_sequence_new'],mutation_data['peptide_feature_position'],peptide_start_pos,peptide_stop_pos);
+        except Exception as e:
+            print(e);
+        return dna_ref_html,dna_new_html,rna_ref_html,rna_new_html,peptide_ref_html,peptide_new_html;
+
+    def _make_mutationSeqChangeHTML_string(self,sequence,feature_pos,start_pos,stop_pos):
+        ''' '''
+        html_str = '';
+        try:
+            html_str = ('<p><sup>%s</sup>...%s<b>%s</b>%s...<sub>%s</sub></p>' %(
+                  start_pos,
+                  sequence[start_pos-1:feature_pos-1],
+                  sequence[feature_pos-1],
+                  sequence[feature_pos:stop_pos-1],
+                  stop_pos
+                  ));
+        except Exception as e:
+            print(e);
+        return html_str;
