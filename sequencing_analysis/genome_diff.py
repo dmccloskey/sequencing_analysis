@@ -385,6 +385,7 @@ class genome_diff():
         '''Make an html tag to highlight the changes to the DNA/RNA/peptide sequence
         INPUT:
         OUTPUT:
+        TODO: add in tags for INS/DEL <del>/<ins> based on the mutation_type
         '''
         dna_ref_html = '';
         dna_new_html = '';

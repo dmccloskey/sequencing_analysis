@@ -9,7 +9,8 @@ from Bio.SeqFeature import FeatureLocation
 class genome_annotations():
     '''class for genome annotations'''
     def __init__(self,annotation_I=None,annotation_ref_I=None,geneReference_I=None,sequence_I=None,sequence_ref_I=None,
-                 IS_sequences_I=None,IS_sequences_ref_I=None):
+                 IS_sequences_I=None,IS_sequences_ref_I=None,
+                 codonUsageTable_I = None):
         
         if annotation_I and annotation_ref_I:
             self.annotation = self.set_annotation(annotation_I,annotation_ref_I);
@@ -38,11 +39,22 @@ class genome_annotations():
         else:
             self.geneReference = [];
 
+        if codonUsageTable_I:
+            self.codonUsageTable = self.import_codonUsageTable(codonUsageTable_I);
+        else: self.codonUsageTable = [];
+
     def import_biologicalMaterialGeneReferences(self, filename):
         '''import biological material gene references for annotations'''
         io = base_importData();
         io.read_csv(filename);
         return io.data;
+
+    def import_codonUsageTable(self, filename):
+        '''import codon usage table'''
+        io = base_importData();
+        io.read_csv(filename);
+        codonUsageTable = {d['codon_triplet']:d for d in io.data};
+        return codonUsageTable
 
     def set_annotation(self,ref_genome_I,ref_I='genbank'):
         """ref_genome_I = reference genome to use for the annotation
@@ -407,13 +419,7 @@ class genome_annotations():
         mutation_O = mutation_I;
 
         #parse the mutation dict
-        if 'position' in mutation_I: mutation_position_I = mutation_I['position'];
-        if 'type' in mutation_I: mutation_type_I = mutation_I['type'];
-        if 'new_seq' in mutation_I: new_seq_I = mutation_I['new_seq'].lower();
-        if 'size' in mutation_I: size_I = mutation_I['size'];
-        elif 'new_seq' in mutation_I: size_I = len(new_seq_I);
-        else: size_I = 0;
-        if 'new_copy_number' in mutation_I: new_copy_number_I = mutation_I['new_copy_number'];
+        mutation_position_I, mutation_type_I, new_seq_I, size_I, new_copy_number_I = self.parse_mutationDict(mutation_I,default_size_I=0);
 
         if mutation_type_I=='SNP':
             sequence_O_str[mutation_position_I-1]=new_seq_I;
@@ -506,7 +512,20 @@ class genome_annotations():
                                            qualifiers=qualifiers_I,sub_features=sub_features_I,ref=ref_I,ref_db=ref_db_I)
 
         return my_feature;
-        
+    
+    def parse_mutationDict(self,mutation_I,default_size_I=0):
+        '''parse the mutation dict'''
+
+        mutation_position_O, mutation_type_O, new_seq_O, size_O, new_copy_number_O = None,None,None,None,None;
+        if 'position' in mutation_I: mutation_position_O = mutation_I['position'];
+        if 'type' in mutation_I: mutation_type_O = mutation_I['type'];
+        if 'new_seq' in mutation_I: new_seq_O = mutation_I['new_seq'].lower();
+        if 'size' in mutation_I: size_O = mutation_I['size'];
+        elif 'new_seq' in mutation_I: size_O = len(new_seq_O);
+        else: size_O = default_size_I;
+        if 'new_copy_number' in mutation_I: new_copy_number_O = mutation_I['new_copy_number'];
+        return mutation_position_O, mutation_type_O, new_seq_O, size_O, new_copy_number_O
+
     def _mutate_peptideFromMutationData(self,mutation_I,annotation_I=None,sequence_I=None,translation_table_I='Bacterial'):
         '''mutation dna, rna, and peptide sequences if the position given the reference genome
         input:
@@ -521,13 +540,7 @@ class genome_annotations():
             sequence_I = self.sequence;
 
         #parse the mutation dict
-        if 'position' in mutation_I: mutation_position_I = mutation_I['position'];
-        if 'type' in mutation_I: mutation_type_I = mutation_I['type'];
-        if 'new_seq' in mutation_I: new_seq_I = mutation_I['new_seq'].lower();
-        if 'size' in mutation_I: size_I = mutation_I['size'];
-        elif 'new_seq' in mutation_I: size_I = len(new_seq_I);
-        else: size_I = 0;
-        if 'new_copy_number' in mutation_I: new_copy_number_I = mutation_I['new_copy_number'];
+        mutation_position_I, mutation_type_I, new_seq_I, size_I, new_copy_number_I = self.parse_mutationDict(mutation_I,default_size_I=0);
 
         snp_records = {};
         snp_records['gene'] = []
@@ -543,9 +556,6 @@ class genome_annotations():
         snp_records['rna_sequence_new'] = ''
         snp_records['peptide_sequence_ref'] = ''
         snp_records['peptide_sequence_new'] = ''
-        snp_records['peptide_feature_position'] = None;
-        snp_records['peptide_feature_ref'] = None;
-        snp_records['peptide_feature_new'] = None;
         snp_records['peptide_feature_position'] = None;
         snp_records['peptide_feature_ref'] = None;
         snp_records['peptide_feature_new'] = None;
@@ -575,8 +585,19 @@ class genome_annotations():
                 mutation_class = {};
                 mutation_class = self.classify_mutation(mutation_new,dna,rna,peptide,has_stop_codon,
                                                         dna_new,rna_new,peptide_new,has_stop_codon_new);
-                #mutation_class = self.classify_mutation(mutation_I,dna,rna,peptide,has_stop_codon,
-                #                                        dna_new,rna_new,peptide_new,has_stop_codon_new);
+                # extract codons
+                if mutation_type_I=='SNP' and 'synonymous' in mutation_class['mutation_class']:
+                    codons_ref = self.convert_rnaSeq2codonUsage(rna);
+                    codons_new = self.convert_rnaSeq2codonUsage(rna_new);
+                    pos = self.convert_ntPosition2AAPos(mutation_class['rna_feature_position']);
+                    mutation_class['codon_triplet_position']=pos
+                    mutation_class['codon_triplet_ref']=codons_ref[pos-1]['codon_triplet']
+                    mutation_class['codon_fraction_ref']=codons_ref[pos-1]['fraction']
+                    mutation_class['codon_frequency_ref']=codons_ref[pos-1]['frequency']
+                    mutation_class['codon_frequency_units']=codons_ref[pos-1]['frequency_units']
+                    mutation_class['codon_triplet_new']=codons_new[pos-1]['codon_triplet']
+                    mutation_class['codon_fraction_new']=codons_new[pos-1]['fraction']
+                    mutation_class['codon_frequency_new']=codons_new[pos-1]['frequency']
                 snp_records.update(mutation_class);
                 break;
         return snp_records;
@@ -632,6 +653,11 @@ class genome_annotations():
         aa_size = nt_size_I/3;
         aa_size_O = int(aa_size) + 1;
         return aa_size_O;
+    def convert_ntPosition2AAPos(self,nt_position_I):
+        '''convert nucleotide position to AA position'''
+        aa_position = nt_position_I/3;
+        aa_position_O = int(aa_position);
+        return aa_position_O;
 
     def convert_genomePosition2FeaturePosition(self,mutation_position_I,feature_I):
         """convert genome position to feature position
@@ -644,6 +670,37 @@ class genome_annotations():
         feature_position_O = None;
         feature_position_O = mutation_position_I - int(feature_I.location.start);
         return feature_position_O;
+
+    def convert_rnaSeq2codonUsage(self,rna,
+                codonUsageTable_I={}):
+        '''Get the codon change and usage values
+        INPUT:
+        OUTPUT:
+        '''
+        if codonUsageTable_I:
+            codonUsageTable = codonUsageTable_I;
+        else: codonUsageTable = self.codonUsageTable;
+        assert(len(rna) % 3 == 0); #check 3-based
+        
+        codons_O = [];
+        for cindex in range(len(rna) // 3):
+            cur_codon = str(rna[cindex * 3:(cindex + 1) * 3]);
+            codon_dict = {
+                'codon_triplet':cur_codon.upper(),
+                'amino_acid':None,
+                'fraction':None,
+                'frequency':None,
+                'frequency_units':None
+                };
+            if cur_codon.upper() in codonUsageTable.keys():
+                codon_dict['fraction']=codonUsageTable[cur_codon.upper()]['fraction'];
+                codon_dict['amino_acid']=codonUsageTable[cur_codon.upper()]['amino_acid'];
+                codon_dict['frequency']=codonUsageTable[cur_codon.upper()]['frequency'];
+                codon_dict['frequency_units']=codonUsageTable[cur_codon.upper()]['frequency_units'];
+            else:
+                print('codon not found in codon usage table.');
+            codons_O.append(codon_dict);
+        return codons_O;
 
     def classify_mutation(self,mutation_I,
                           dna,rna,peptide,has_stop_codon,
@@ -661,13 +718,7 @@ class genome_annotations():
         '''
 
         #parse the mutation dict
-        if 'position' in mutation_I: mutation_position_I = mutation_I['position'];
-        if 'type' in mutation_I: mutation_type_I = mutation_I['type'];
-        if 'new_seq' in mutation_I: new_seq_I = mutation_I['new_seq'].lower();
-        if 'size' in mutation_I: size_I = mutation_I['size'];
-        elif 'new_seq' in mutation_I: size_I = len(new_seq_I);
-        else: size_I = 1;
-        if 'new_copy_number' in mutation_I: new_copy_number_I = mutation_I['new_copy_number'];
+        mutation_position_I, mutation_type_I, new_seq_I, size_I, new_copy_number_I = self.parse_mutationDict(mutation_I,default_size_I=1);
 
         aa_size_I = self.convert_ntSize2AASize(size_I);
 
@@ -682,13 +733,15 @@ class genome_annotations():
         mutation_class['peptide_feature_ref'] = None;
         mutation_class['peptide_feature_new'] = None;
         mutation_class['mutation_class'] = [];
+        mutation_class['mutation_type'] = mutation_type_I;
         if mutation_type_I=='SNP':
             pos,old,new=[],[],[];
             pos,old,new = self.compare2sequences(dna,dna_new);
             if not pos or not old or not new: return mutation_class;
             mutation_class['dna_feature_position'] = pos[0];
             mutation_class['dna_feature_ref'] = old[0];
-            mutation_class['dna_feature_new'] = new_seq_I;
+            mutation_class['dna_feature_new'] = new[0];
+            #mutation_class['dna_feature_new'] = new_seq_I;
             if pos and len(dna)>len(dna_new):
                 mutation_class['mutation_class'].append('truncated CDS');
             elif pos and new[0]=='*':
@@ -743,6 +796,11 @@ class genome_annotations():
                 mutation_class['peptide_feature_position'] = pos[0];
                 mutation_class['peptide_feature_ref'] = old[0];
                 mutation_class['peptide_feature_new'] = new[0];
+            elif mutation_class['rna_feature_position']:
+                pos,old,new = self.get_synonymousPeptideFeature(peptide,peptide_new,mutation_class['rna_feature_position']);
+                mutation_class['peptide_feature_position'] = pos;
+                mutation_class['peptide_feature_ref'] = old;
+                mutation_class['peptide_feature_new'] = new;
             else:
                 mutation_class['peptide_feature_position'] = None;
                 mutation_class['peptide_feature_ref'] = None;
@@ -754,6 +812,7 @@ class genome_annotations():
             if not pos or not old or not new: return mutation_class;
             mutation_class['dna_feature_position'] = pos[0];
             mutation_class['dna_feature_ref'] = old[0];
+            #mutation_class['dna_feature_new'] = new[0];
             mutation_class['dna_feature_new'] = new_seq_I;
             if pos and len(dna)>len(dna_new):
                 mutation_class['mutation_class'].append('truncated CDS');
@@ -809,6 +868,11 @@ class genome_annotations():
                 mutation_class['peptide_feature_position'] = pos[0];
                 mutation_class['peptide_feature_ref'] = old[0];
                 mutation_class['peptide_feature_new'] = new[0];
+            elif mutation_class['rna_feature_position']:
+                pos,old,new = self.get_synonymousPeptideFeature(peptide,peptide_new,mutation_class['rna_feature_position']);
+                mutation_class['peptide_feature_position'] = pos;
+                mutation_class['peptide_feature_ref'] = old;
+                mutation_class['peptide_feature_new'] = new;
             else:
                 mutation_class['peptide_feature_position'] = None;
                 mutation_class['peptide_feature_ref'] = None;
@@ -877,6 +941,11 @@ class genome_annotations():
                 mutation_class['peptide_feature_position'] = pos[0];
                 mutation_class['peptide_feature_ref'] = old[0];
                 mutation_class['peptide_feature_new'] = new[0];
+            elif mutation_class['rna_feature_position']:
+                pos,old,new = self.get_synonymousPeptideFeature(peptide,peptide_new,mutation_class['rna_feature_position']);
+                mutation_class['peptide_feature_position'] = pos;
+                mutation_class['peptide_feature_ref'] = old;
+                mutation_class['peptide_feature_new'] = new;
             else:
                 mutation_class['peptide_feature_position'] = None;
                 mutation_class['peptide_feature_ref'] = None;
@@ -946,6 +1015,11 @@ class genome_annotations():
                 mutation_class['peptide_feature_position'] = pos[0];
                 mutation_class['peptide_feature_ref'] = old[0];
                 mutation_class['peptide_feature_new'] = new[0];
+            elif mutation_class['rna_feature_position']:
+                pos,old,new = self.get_synonymousPeptideFeature(peptide,peptide_new,mutation_class['rna_feature_position']);
+                mutation_class['peptide_feature_position'] = pos;
+                mutation_class['peptide_feature_ref'] = old;
+                mutation_class['peptide_feature_new'] = new;
             else:
                 mutation_class['peptide_feature_position'] = None;
                 mutation_class['peptide_feature_ref'] = None;
@@ -1024,6 +1098,11 @@ class genome_annotations():
                 mutation_class['peptide_feature_position'] = pos[0];
                 mutation_class['peptide_feature_ref'] = old[0];
                 mutation_class['peptide_feature_new'] = new[0];
+            elif mutation_class['rna_feature_position']:
+                pos,old,new = self.get_synonymousPeptideFeature(peptide,peptide_new,mutation_class['rna_feature_position']);
+                mutation_class['peptide_feature_position'] = pos;
+                mutation_class['peptide_feature_ref'] = old;
+                mutation_class['peptide_feature_new'] = new;
             else:
                 mutation_class['peptide_feature_position'] = None;
                 mutation_class['peptide_feature_ref'] = None;
@@ -1093,6 +1172,11 @@ class genome_annotations():
                 mutation_class['peptide_feature_position'] = pos[0];
                 mutation_class['peptide_feature_ref'] = old[0];
                 mutation_class['peptide_feature_new'] = new[0];
+            elif mutation_class['rna_feature_position']:
+                pos,old,new = self.get_synonymousPeptideFeature(peptide,peptide_new,mutation_class['rna_feature_position']);
+                mutation_class['peptide_feature_position'] = pos;
+                mutation_class['peptide_feature_ref'] = old;
+                mutation_class['peptide_feature_new'] = new;
             else:
                 mutation_class['peptide_feature_position'] = None;
                 mutation_class['peptide_feature_ref'] = None;
@@ -1100,4 +1184,17 @@ class genome_annotations():
         else:
             print('mutation type ' + mutation_type_I + ' not yet supported.');
         return mutation_class;
+
+    def get_synonymousPeptideFeature(self,peptide,peptide_new,rna_feature_pos):
+        '''retrieve a synonymous peptide feature'''
+
+        pos,old,new=None,None,None;
+        try:
+            if rna_feature_pos:
+                pos = self.convert_ntPosition2AAPos(rna_feature_pos);
+                old = peptide[pos-1];
+                new = peptide_new[pos-1];
+        except Exception as e:
+            print(e);
+        return pos,old,new
 
