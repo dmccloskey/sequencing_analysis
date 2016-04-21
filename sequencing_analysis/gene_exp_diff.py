@@ -1,14 +1,20 @@
 from io_utilities.base_importData import base_importData
 from io_utilities.base_exportData import base_exportData
+from .genes_fpkm_tracking import genes_fpkm_tracking
+import copy
 
-class gene_exp_diff():
-    def __init__(self,geneExpDiff_I=None):
+class gene_exp_diff(genes_fpkm_tracking):
+    def __init__(self,geneExpDiff_I=None,genesFpkmTracking_I=None):
         if geneExpDiff_I:
             self.geneExpDiff = geneExpDiff_I;
         else:
             self.geneExpDiff = [];
+        if genesFpkmTracking_I:
+            self.genesFpkmTracking = genesFpkmTracking_I;
+        else:
+            self.genesFpkmTracking = [];
 
-    def import_geneExpDiff(self,filename_I,experiment_id_1_I=None,experiment_id_2_I=None,sample_name_abbreviation_1_I=None,sample_name_abbreviation_2_I=None):
+    def import_geneExpDiff(self,filename_I, experiment_id_1_I=None,experiment_id_2_I=None,sample_name_abbreviation_1_I=None,sample_name_abbreviation_2_I=None):
         """import geneExpDiff
         INPUT:
         filename_I = input filename
@@ -31,6 +37,51 @@ class gene_exp_diff():
             d['sample_name_abbreviation_1'] = sample_name_abbreviation_1_I;
             d['sample_name_abbreviation_2'] = sample_name_abbreviation_2_I;
         self.geneExpDiff = geneExpDiff;
+
+    def import_genesFpkmTracking(self,filename_I,analysis_id_I = None,experiment_id_1_I=None,experiment_id_2_I=None,sample_name_abbreviation_1_I=None,sample_name_abbreviation_2_I=None):
+        """import genes.fpkm_tracking from cuffdiff
+        INPUT:
+        filename_I = input filename
+        
+        OPTIONAL INPUT:
+        the following are optional for analyzing a single sample,
+        but required when analyzing multiple samples
+
+        experiment_id_1_I = string, name of the experiment that generated the samples
+        experiment_id_I = string, name of the experiment that generated the samples
+        sample_name_abbreviation_1_I = string, name of the sample
+        sample_name_abbreviation_2_I = string, name of the sample
+        """
+        io = base_importData();
+        io.read_tab(filename_I);
+        genesFpkmTracking = self.format_geneExpDiff(io.data);
+        genesFpkmTracking_O = [];
+        for d in genesFpkmTracking:
+            tmp = copy.copy(d);
+            #1
+            tmp['experiment_id'] = experiment_id_1_I;
+            tmp['analysis_id'] = analysis_id_I;
+            tmp['FPKM'] = d[sample_name_abbreviation_1_I+'_FPKM'];
+            tmp['FPKM_conf_lo'] = d[sample_name_abbreviation_1_I+'_conf_lo'];
+            tmp['FPKM_conf_hi'] = d[sample_name_abbreviation_1_I+'_conf_hi'];
+            tmp['FPKM_status'] = d[sample_name_abbreviation_1_I+'_status'];
+            tmp['sample_name_abbreviation'] = sample_name_abbreviation_1_I;
+            tmp['used_'] = True;
+            tmp['comment_'] = None;
+            genesFpkmTracking_O.append(tmp);
+            #2
+            tmp = copy.copy(d);
+            tmp['analysis_id'] = analysis_id_I;
+            tmp['experiment_id'] = experiment_id_2_I;
+            tmp['FPKM'] = d[sample_name_abbreviation_2_I+'_FPKM'];
+            tmp['FPKM_conf_lo'] = d[sample_name_abbreviation_2_I+'_conf_lo'];
+            tmp['FPKM_conf_hi'] = d[sample_name_abbreviation_2_I+'_conf_hi'];
+            tmp['FPKM_status'] = d[sample_name_abbreviation_2_I+'_status'];
+            tmp['sample_name_abbreviation'] = sample_name_abbreviation_2_I;
+            tmp['used_'] = True;
+            tmp['comment_'] = None;
+            genesFpkmTracking_O.append(tmp);
+        self.genesFpkmTracking = self.format_genesFpkmTracking(genesFpkmTracking_O);
 
     def export_geneExpDiff(self,filename_O):
         """export geneExpDiff"""
