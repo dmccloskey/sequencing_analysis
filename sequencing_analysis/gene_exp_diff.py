@@ -4,6 +4,10 @@ from .genes_fpkm_tracking import genes_fpkm_tracking
 import copy
 
 class gene_exp_diff(genes_fpkm_tracking):
+    '''Helper class to parse output from cuffdiff
+    http://cole-trapnell-lab.github.io/cufflinks/cuffdiff/index.html
+    '''
+
     def __init__(self,geneExpDiff_I=None,genesFpkmTracking_I=None):
         if geneExpDiff_I:
             self.geneExpDiff = geneExpDiff_I;

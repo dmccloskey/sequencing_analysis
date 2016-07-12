@@ -2,6 +2,9 @@ from io_utilities.base_importData import base_importData
 from io_utilities.base_exportData import base_exportData
 
 class genes_fpkm_tracking():
+    '''Helper class to parse the output from cufflinks
+    http://cole-trapnell-lab.github.io/cufflinks/cufflinks/index.html
+    '''
     def __init__(self,genesFpkmTracking_I=None):
         if genesFpkmTracking_I:
             self.genesFpkmTracking = genesFpkmTracking_I;
