@@ -1,4 +1,4 @@
-from io_utilities.base_importData import base_importData
+﻿from io_utilities.base_importData import base_importData
 from io_utilities.base_exportData import base_exportData
 from Bio import SeqIO
 from Bio.Seq import Seq
@@ -98,6 +98,7 @@ class genome_annotations():
         snp_records['EC_number'] = []
         snp_records['product'] = []
         snp_records['location'] = []
+        #snp_records['organism'] = []
         # find features in the coding region of the genome that bracket the mutation position
         for feature_cnt,feature in enumerate(annotation_I.features):
             if mutation_position_I in feature and feature.type == 'gene':
@@ -153,6 +154,20 @@ class genome_annotations():
                 else:snp_records['EC_number'] = [None];
                 if feature.qualifiers.get('product'):snp_records['product'] = feature.qualifiers.get('product')
                 else:snp_records['product'] = [None];
+                snp_records['location'] = ['coding'];
+            elif mutation_position_I in feature and feature.type == 'misc_RNA':
+                snp_records['gene'] = feature.qualifiers.get('gene')
+                snp_records['db_xref'] = feature.qualifiers.get('db_xref')
+                snp_records['locus_tag'] = feature.qualifiers.get('locus_tag')
+                snp_records['note'] = feature.qualifiers.get('note')
+                snp_records['location'] = ['coding'];
+            elif mutation_position_I in feature and feature.type == 'exon':
+                snp_records['note'] = feature.qualifiers.get('note')
+                snp_records['location'] = ['coding'];
+            elif mutation_position_I in feature and feature.type == 'STS':
+                snp_records['note'] = feature.qualifiers.get('note')
+                snp_records['db_xref'] = feature.qualifiers.get('db_xref')
+                snp_records['standard_name'] = feature.qualifiers.get('standard_name')
                 snp_records['location'] = ['coding'];
             elif mutation_position_I in feature and feature.type != 'source':
                 print(feature)
