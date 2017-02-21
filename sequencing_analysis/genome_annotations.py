@@ -169,6 +169,10 @@ class genome_annotations():
                 snp_records['db_xref'] = feature.qualifiers.get('db_xref')
                 snp_records['standard_name'] = feature.qualifiers.get('standard_name')
                 snp_records['location'] = ['coding'];
+            elif mutation_position_I in feature and feature.type == 'mRNA':
+                snp_records['gene'] = feature.qualifiers.get('gene')
+                snp_records['note'] = feature.qualifiers.get('note')
+                snp_records['location'] = ['coding'];
             elif mutation_position_I in feature and feature.type != 'source':
                 print(feature)
         if not snp_records['location']:
