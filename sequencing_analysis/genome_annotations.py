@@ -209,9 +209,12 @@ class genome_annotations():
                 stop = feature.location.end.position
                 if (inter1_start == start and inter1_stop == stop) or (inter2_start == start and inter2_stop == stop):
                     if feature.type == 'gene':
-                        snp_records['gene'] += feature.qualifiers.get('gene')
-                        snp_records['db_xref'] += feature.qualifiers.get('db_xref')
-                        snp_records['locus_tag'] += feature.qualifiers.get('locus_tag')
+                        if feature.qualifiers.get('gene'):snp_records['gene'] += feature.qualifiers.get('gene')
+                        else:snp_records['gene'] += [None]
+                        if feature.qualifiers.get('db_xref'):snp_records['db_xref'] += feature.qualifiers.get('db_xref')
+                        else:snp_records['db_xref'] += [None]
+                        if feature.qualifiers.get('locus_tag'):snp_records['locus_tag'] += feature.qualifiers.get('locus_tag')
+                        else:snp_records['locus_tag'] += [None]
                     if feature.type == 'CDS':
                         if feature.qualifiers.get('EC_number'):snp_records['EC_number'] += feature.qualifiers.get('EC_number')
                         else:snp_records['EC_number'] += [None]
