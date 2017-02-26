@@ -99,8 +99,31 @@ class genome_annotations():
         snp_records['product'] = []
         snp_records['location'] = []
         #snp_records['organism'] = []
-        # find features in the coding region of the genome that bracket the mutation position
+        start_prev = 0;
+        stop_prev = 0;
+        inter1_start = None;
+        inter1_stop = None;
+        inter2_start = None;
+        inter2_stop = None;
+        inter1_start_index = 0;
+        inter1_stop_index = 0
+        # pass 1: find features before, after the mutation position
         for feature_cnt,feature in enumerate(annotation_I.features):
+            # locate the start and stop positions of the features before and after the mutation
+            start = feature.location.start.position
+            stop = feature.location.end.position
+            if mutation_position_I > stop_prev and mutation_position_I < start:
+                inter1_start = start_prev;
+                inter1_stop = stop_prev;
+                inter2_start = start;
+                inter2_stop = stop
+                inter1_start_index = feature_cnt-2;
+                inter1_stop_index = feature_cnt+2;
+                break;
+            start_prev = start;
+            stop_prev = stop;
+            # check if the mutation position is in a coding region
+            # find features in the coding region of the genome that bracket the mutation position
             if mutation_position_I in feature and feature.type == 'gene':
                 snp_records['gene'] = feature.qualifiers.get('gene')
                 snp_records['db_xref'] = feature.qualifiers.get('db_xref')
@@ -175,46 +198,27 @@ class genome_annotations():
                 snp_records['location'] = ['coding'];
             elif mutation_position_I in feature and feature.type != 'source':
                 print(feature)
+        if not inter1_start:
+            # the end of the genome was reached without finding features both before and after the mutation
+            # record the last entry
+            inter1_start = start_prev;
+            inter1_stop = stop_prev;
+            inter2_start = start;
+            inter2_stop = stop
         if not snp_records['location']:
             # no features in the coding region were found that bracket the mutation
-            # find features before and after the mutation position
-            start_prev = 0;
-            stop_prev = 0;
-            inter1_start = None;
-            inter1_stop = None;
-            inter2_start = None;
-            inter2_stop = None;
-            # pass 1: locate the start and stop positions of the features before and after the mutation
-            for feature_cnt,feature in enumerate(annotation_I.features):
-                start = feature.location.start.position
-                stop = feature.location.end.position
-                if mutation_position_I > stop_prev and mutation_position_I < start:
-                    inter1_start = start_prev;
-                    inter1_stop = stop_prev;
-                    inter2_start = start;
-                    inter2_stop = stop
-                    break;
-                start_prev = start;
-                stop_prev = stop;
-            if not inter1_start:
-                # the end of the genome was reached without finding features both before and after the mutation
-                # record the last entry
-                inter1_start = start_prev;
-                inter1_stop = stop_prev;
-                inter2_start = start;
-                inter2_stop = stop
             # pass 2: record features before and after the mutation
-            for feature_cnt,feature in enumerate(annotation_I.features):
+            for feature_cnt,feature in enumerate(annotation_I.features[inter1_start_index:inter1_stop_index]):
                 start = feature.location.start.position
                 stop = feature.location.end.position
                 if (inter1_start == start and inter1_stop == stop) or (inter2_start == start and inter2_stop == stop):
                     if feature.type == 'gene':
                         if feature.qualifiers.get('gene'):snp_records['gene'] += feature.qualifiers.get('gene')
-                        else:snp_records['gene'] += [None]
+                        #else:snp_records['gene'] += [None]
                         if feature.qualifiers.get('db_xref'):snp_records['db_xref'] += feature.qualifiers.get('db_xref')
-                        else:snp_records['db_xref'] += [None]
+                        #else:snp_records['db_xref'] += [None]
                         if feature.qualifiers.get('locus_tag'):snp_records['locus_tag'] += feature.qualifiers.get('locus_tag')
-                        else:snp_records['locus_tag'] += [None]
+                        #else:snp_records['locus_tag'] += [None]
                     if feature.type == 'CDS':
                         if feature.qualifiers.get('EC_number'):snp_records['EC_number'] += feature.qualifiers.get('EC_number')
                         else:snp_records['EC_number'] += [None]
